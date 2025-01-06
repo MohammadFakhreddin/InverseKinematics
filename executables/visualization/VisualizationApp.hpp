@@ -1,8 +1,9 @@
 #pragma once
 
-#include "RenderTypes.hpp"
 #include "BedrockPath.hpp"
 #include "LogicalDevice.hpp"
+#include "RenderTypes.hpp"
+#include "SceneRenderPass.hpp"
 #include "Time.hpp"
 #include "UI.hpp"
 
@@ -31,17 +32,18 @@ private:
     void OnUI(float deltaTimeSec);
 
     // Render parameters
-    std::shared_ptr<MFA::Path> path{};
-    std::unique_ptr<MFA::LogicalDevice> device{};
-    std::shared_ptr<MFA::UI> ui{};
-    std::unique_ptr<MFA::Time> time{};
-    std::shared_ptr<MFA::SwapChainRenderResource> swapChainResource{};
-    std::shared_ptr<MFA::DepthRenderResource> depthResource{};
-    // TODO: We might have to disable this
-    std::shared_ptr<MFA::MSSAA_RenderResource> msaaResource{};
-    std::shared_ptr<MFA::DisplayRenderPass> displayRenderPass{};
+    std::shared_ptr<MFA::Path> _path{};
+    std::unique_ptr<MFA::LogicalDevice> _device{};
+    std::shared_ptr<MFA::UI> _ui{};
+    std::unique_ptr<MFA::Time> _time{};
+    std::shared_ptr<MFA::SwapChainRenderResource> _swapChainResource{};
+    std::shared_ptr<MFA::DepthRenderResource> _depthResource{};
+    std::shared_ptr<MFA::MSSAA_RenderResource> _msaaResource{};
+    std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass{};
+    std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
+    std::shared_ptr<SceneRenderResource> _sceneRenderResource{};
 
-    ImFont* defaultFont{};
-    ImFont* boldFont{};
+    ImFont* _defaultFont{};
+    ImFont* _boldFont{};
 
 };

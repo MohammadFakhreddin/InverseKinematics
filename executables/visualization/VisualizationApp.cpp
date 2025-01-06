@@ -6,7 +6,7 @@ using namespace MFA;
 
 VisualizationApp::VisualizationApp()
 {
-    path = Path::Instance();
+    _path = Path::Instance();
 
     LogicalDevice::InitParams params{.windowWidth = 800,
                                      .windowHeight = 800,
@@ -14,59 +14,59 @@ VisualizationApp::VisualizationApp()
                                      .fullScreen = false,
                                      .applicationName = "InverseKinematics"};
 
-    device = LogicalDevice::Instantiate(params);
-    assert(device->IsValid() == true);
+    _device = LogicalDevice::Instantiate(params);
+    assert(_device->IsValid() == true);
 
     if (SDL_JoystickOpen(0) != nullptr)
         SDL_JoystickEventState(SDL_ENABLE);
 
-    device->SDL_EventSignal.Register([&](SDL_Event *event) -> void { OnSDL_Event(event); });
+    _device->SDL_EventSignal.Register([&](SDL_Event *event) -> void { OnSDL_Event(event); });
 
-    swapChainResource = std::make_shared<SwapChainRenderResource>();
-    depthResource = std::make_shared<DepthRenderResource>();
-    msaaResource = std::make_shared<MSSAA_RenderResource>();
-    displayRenderPass = std::make_shared<DisplayRenderPass>(swapChainResource, depthResource, msaaResource);
+    _swapChainResource = std::make_shared<SwapChainRenderResource>();
+    _depthResource = std::make_shared<DepthRenderResource>();
+    _msaaResource = std::make_shared<MSSAA_RenderResource>();
+    _displayRenderPass = std::make_shared<DisplayRenderPass>(_swapChainResource, _depthResource, _msaaResource);
 
-    ui = std::make_shared<UI>(displayRenderPass, UI::Params {
+    _ui = std::make_shared<UI>(_displayRenderPass, UI::Params {
         .lightMode = false,
         .fontCallback = [this](ImGuiIO & io)->void
         {
             {// Default font
                 auto const fontPath = Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMonoNL-Regular.ttf");
                 MFA_ASSERT(std::filesystem::exists(fontPath));
-                defaultFont = io.Fonts->AddFontFromFileTTF(
+                _defaultFont = io.Fonts->AddFontFromFileTTF(
                     fontPath.c_str(),
                     20.0f
                 );
-                MFA_ASSERT(defaultFont != nullptr);
+                MFA_ASSERT(_defaultFont != nullptr);
             }
             {// Bold font
                 auto const fontPath = Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf");
                 MFA_ASSERT(std::filesystem::exists(fontPath));
-                boldFont = io.Fonts->AddFontFromFileTTF(
+                _boldFont = io.Fonts->AddFontFromFileTTF(
                     fontPath.c_str(),
                     20.0f
                 );
-                MFA_ASSERT(boldFont != nullptr);
+                MFA_ASSERT(_boldFont != nullptr);
             }
         }
     });
-    ui->UpdateSignal.Register([this]() -> void { OnUI(Time::DeltaTimeSec()); });
+    _ui->UpdateSignal.Register([this]() -> void { OnUI(Time::DeltaTimeSec()); });
 
-    device->ResizeEventSignal2.Register([this]() -> void { Resize(); });
+    _device->ResizeEventSignal2.Register([this]() -> void { Resize(); });
 }
 
 //======================================================================================================================
 
 VisualizationApp::~VisualizationApp()
 {
-    ui.reset();
-    displayRenderPass.reset();
-    msaaResource.reset();
-    depthResource.reset();
-    swapChainResource.reset();
-    device.reset();
-    path.reset();
+    _ui.reset();
+    _displayRenderPass.reset();
+    _msaaResource.reset();
+    _depthResource.reset();
+    _swapChainResource.reset();
+    _device.reset();
+    _path.reset();
 }
 
 //======================================================================================================================
@@ -76,7 +76,7 @@ void VisualizationApp::Run()
     SDL_GL_SetSwapInterval(0);
     SDL_Event e;
 
-    time = Time::Instantiate(120, 30);
+    _time = Time::Instantiate(120, 30);
 
     bool shouldQuit = false;
 
@@ -92,28 +92,28 @@ void VisualizationApp::Run()
             }
         }
 
-        device->Update();
+        _device->Update();
         Update(Time::DeltaTimeSec());
 
-        auto recordState = device->AcquireRecordState(swapChainResource->GetSwapChainImages().swapChain);
+        auto recordState = _device->AcquireRecordState(_swapChainResource->GetSwapChainImages().swapChain);
         if (recordState.isValid == true)
         {
             Render(recordState);
         }
 
-        time->Update();
+        _time->Update();
     }
 
-    time.reset();
+    _time.reset();
 
-    device->DeviceWaitIdle();
+    _device->DeviceWaitIdle();
 }
 
 //======================================================================================================================
 
 void VisualizationApp::Update(float deltaTime)
 {
-    ui->Update();
+    _ui->Update();
 }
 
 //======================================================================================================================
@@ -126,20 +126,20 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     // );
     // device->EndCommandBuffer(recordState);
 
-    device->BeginCommandBuffer(
+    _device->BeginCommandBuffer(
         recordState,
         RT::CommandBufferType::Graphic
     );
 
-    displayRenderPass->Begin(recordState);
+    _displayRenderPass->Begin(recordState);
 
-    ui->Render(recordState, Time::DeltaTimeSec());
+    _ui->Render(recordState, Time::DeltaTimeSec());
 
-    displayRenderPass->End(recordState);
-    device->EndCommandBuffer(recordState);
+    _displayRenderPass->End(recordState);
+    _device->EndCommandBuffer(recordState);
 
-    device->SubmitQueues(recordState);
-    device->Present(recordState, swapChainResource->GetSwapChainImages().swapChain);
+    _device->SubmitQueues(recordState);
+    _device->Present(recordState, _swapChainResource->GetSwapChainImages().swapChain);
 }
 
 //======================================================================================================================
@@ -229,17 +229,17 @@ void VisualizationApp::OnUI(float deltaTimeSec)
         style.ChildRounding = 5.0f;
         style.TabRounding = 4.0f;
     }
-    ui->DisplayDockSpace();
-    ui->BeginWindow("Parameters");
-    ImGui::PushFont(defaultFont);
+    _ui->DisplayDockSpace();
+    _ui->BeginWindow("Parameters");
+    ImGui::PushFont(_defaultFont);
     ImGui::Text("This is a text");
     ImGui::PopFont();
-    ImGui::PushFont(boldFont);
+    ImGui::PushFont(_boldFont);
     ImGui::Text("This is a bold text");
     ImGui::PopFont();
-    ui->EndWindow();
-    ui->BeginWindow("Scene");
-    ui->EndWindow();
+    _ui->EndWindow();
+    _ui->BeginWindow("Scene");
+    _ui->EndWindow();
 }
 
 //======================================================================================================================

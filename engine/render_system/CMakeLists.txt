@@ -38,8 +38,6 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/PointPipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/FlatShadingPipeline.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/FlatShadingPipeline.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/BlinnPhongPipeline.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/BlinnPhongPipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/TextOverlayPipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/TextOverlayPipeline.hpp"
     

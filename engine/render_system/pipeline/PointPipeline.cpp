@@ -108,7 +108,7 @@ namespace MFA
     {
         // Vertex shader
         auto cpuVertexShader = Importer::ShaderFromSPV(
-            Path::Instance()->Get("engine/shaders/point_pipeline/PointPipeline.vert.spv"),
+            Path::Instance()->Get("shaders/point_pipeline/PointPipeline.vert.spv"),
             VK_SHADER_STAGE_VERTEX_BIT,
             "main"
         );
@@ -119,7 +119,7 @@ namespace MFA
 
         // Fragment shader
         auto cpuFragmentShader = Importer::ShaderFromSPV(
-            Path::Instance()->Get("engine/shaders/point_pipeline/PointPipeline.frag.spv"),
+            Path::Instance()->Get("shaders/point_pipeline/PointPipeline.frag.spv"),
             VK_SHADER_STAGE_FRAGMENT_BIT,
             "main"
         );
