@@ -12,9 +12,9 @@ public:
     ~SceneRenderPass();
 
     // This is a special case so we don't need record state
-    void BeginRenderPass(VkCommandBuffer commandBuffer) const;
+    void Begin(VkCommandBuffer commandBuffer) const;
 
-    void EndRenderPass(VkCommandBuffer commandBuffer);
+    void End(VkCommandBuffer commandBuffer);
 
     [[nodiscard]]
     VkRenderPass GetRenderPass() const;

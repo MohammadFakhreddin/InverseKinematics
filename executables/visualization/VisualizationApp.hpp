@@ -6,12 +6,15 @@
 #include "SceneRenderPass.hpp"
 #include "Time.hpp"
 #include "UI.hpp"
+#include "pipeline/FlatShadingPipeline.hpp"
 
 #include <SDL_events.h>
 
 class VisualizationApp
 {
 public:
+
+    using ScenePipeline = MFA::FlatShadingPipeline;
 
     explicit VisualizationApp();
 
@@ -31,17 +34,30 @@ private:
 
     void OnUI(float deltaTimeSec);
 
+    void PrepareSceneRenderPass();
+
+    void ApplyUI_Style();
+
+    void DisplaySceneWindow();
+
+    void DisplayParametersWindow();
+
     // Render parameters
     std::shared_ptr<MFA::Path> _path{};
-    std::unique_ptr<MFA::LogicalDevice> _device{};
+    MFA::LogicalDevice * _device{};
     std::shared_ptr<MFA::UI> _ui{};
     std::unique_ptr<MFA::Time> _time{};
     std::shared_ptr<MFA::SwapChainRenderResource> _swapChainResource{};
     std::shared_ptr<MFA::DepthRenderResource> _depthResource{};
     std::shared_ptr<MFA::MSSAA_RenderResource> _msaaResource{};
     std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass{};
+    std::shared_ptr<MFA::RT::SamplerGroup> _sampler{};
+
     std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
     std::shared_ptr<SceneRenderResource> _sceneRenderResource{};
+    VkExtent2D _sceneWindowSize{800, 800};
+    bool _sceneWindowResized = true;
+    ImTextureID _sceneTextureID{};
 
     ImFont* _defaultFont{};
     ImFont* _boldFont{};

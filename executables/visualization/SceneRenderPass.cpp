@@ -19,15 +19,15 @@ SceneRenderPass::~SceneRenderPass() = default;
 
 //======================================================================================================================
 
-void SceneRenderPass::BeginRenderPass(VkCommandBuffer commandBuffer) const
+void SceneRenderPass::Begin(VkCommandBuffer commandBuffer) const
 {
     auto const & imageExtent = _renderResource->ImageExtent();
 
     RB::AssignViewportAndScissorToCommandBuffer(imageExtent, commandBuffer);
 
     std::vector<VkClearValue> clearValues(2);
-    clearValues[0].color = VkClearColorValue{ .float32 = {1.0f, 1.0f, 1.0f, 0.0f } };
-    clearValues[1].color = VkClearColorValue{ .float32 = {1.0f, 1.0f, 1.0f, 0.0f } };
+    clearValues[0].color = VkClearColorValue{ .float32 = {1.0f, 1.0f, 1.0f, 1.0f } };
+    clearValues[1].color = VkClearColorValue{ .float32 = {1.0f, 1.0f, 1.0f, 1.0f } };
 
     RB::BeginRenderPass(
         commandBuffer,
@@ -41,7 +41,7 @@ void SceneRenderPass::BeginRenderPass(VkCommandBuffer commandBuffer) const
 
 //======================================================================================================================
 
-void SceneRenderPass::EndRenderPass(VkCommandBuffer commandBuffer)
+void SceneRenderPass::End(VkCommandBuffer commandBuffer)
 {
     vkCmdEndRenderPass(commandBuffer);
 }

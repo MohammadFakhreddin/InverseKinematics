@@ -737,20 +737,13 @@ namespace MFA
 
     ImTextureID UI::AddTexture(VkSampler sampler, VkImageView imageView)
     {
-        auto * device = LogicalDevice::Instance->GetVkDevice();
+        auto *device = LogicalDevice::Instance->GetVkDevice();
 
-        auto descriptorSet = RB::CreateDescriptorSet(
-            device,
-            _descriptorPool->descriptorPool,
-            _descriptorSetLayout->descriptorSetLayout,
-            1
-        );
+        auto descriptorSet = RB::CreateDescriptorSet(device, _descriptorPool->descriptorPool,
+                                                     _descriptorSetLayout->descriptorSetLayout, 1);
 
         auto const imageInfo = VkDescriptorImageInfo{
-            .sampler = sampler,
-            .imageView = imageView,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        };
+            .sampler = sampler, .imageView = imageView, .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
         auto writeDescriptorSet = VkWriteDescriptorSet{
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = descriptorSet.descriptorSets[0],
@@ -760,16 +753,43 @@ namespace MFA
             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .pImageInfo = &imageInfo,
         };
-        RB::UpdateDescriptorSets(
-            device,
-            1,
-            &writeDescriptorSet
-        );
+        RB::UpdateDescriptorSets(device, 1, &writeDescriptorSet);
 
         _imageDescriptorSetGroups.emplace_back(descriptorSet);
 
         return (ImTextureID)descriptorSet.descriptorSets[0];
     }
+
+    //-------------------------------------------------------------------------------------------------
+
+    void UI::UpdateTexture(ImTextureID textureID, VkSampler sampler, VkImageView imageView)
+    {
+        auto *device = LogicalDevice::Instance->GetVkDevice();
+
+        auto const imageInfo = VkDescriptorImageInfo{
+            .sampler = sampler,
+            .imageView = imageView,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+
+        auto writeDescriptorSet = VkWriteDescriptorSet{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = (VkDescriptorSet)textureID,
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .pImageInfo = &imageInfo,
+        };
+
+        RB::UpdateDescriptorSets(device, 1, &writeDescriptorSet);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+
+    // void UI::RemoveTexture(ImTextureID textureID)
+    // {
+    //
+    // }
 
     //-------------------------------------------------------------------------------------------------
 

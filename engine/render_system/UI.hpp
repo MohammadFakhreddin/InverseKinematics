@@ -54,10 +54,15 @@ namespace MFA
         static bool InputText(char const * text, std::string & value);
 
         [[nodiscard]]
-        bool IsDarkMode() {return _darkMode;};
+        bool IsDarkMode() const { return _darkMode;};
 
 	    [[nodiscard]]
 	    ImTextureID AddTexture(VkSampler sampler, VkImageView imageView);
+
+        void UpdateTexture(ImTextureID textureID, VkSampler sampler, VkImageView imageView);
+
+	    // TODO
+	    // void RemoveTexture(ImTextureID textureID);
 
 	    template<typename T>
         static void List(

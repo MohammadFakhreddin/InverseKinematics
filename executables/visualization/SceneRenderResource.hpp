@@ -1,14 +1,13 @@
 #pragma once
 
 #include "RenderTypes.hpp"
-#include "render_resource/RenderResource.hpp"
 
-class SceneRenderResource : MFA::RenderResource
+class SceneRenderResource
 {
 public:
 
     explicit SceneRenderResource(VkExtent2D imageExtent, VkFormat imageFormat);
-    ~SceneRenderResource() override;
+    ~SceneRenderResource();
 
     [[nodiscard]]
     VkExtent2D const & ImageExtent() const {return _imageExtent;}

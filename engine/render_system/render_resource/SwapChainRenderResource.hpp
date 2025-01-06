@@ -34,6 +34,5 @@ namespace MFA
     private:
 
         std::shared_ptr<RT::SwapChainGroup> mSwapChainImages{};
-
     };
 }
