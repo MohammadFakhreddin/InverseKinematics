@@ -410,7 +410,7 @@ namespace MFA::RenderBackend
 
     std::shared_ptr<RT::DescriptorSetLayoutGroup> CreateDescriptorSetLayout(
         VkDevice device,
-        uint8_t const bindings_count,
+        uint8_t bindings_count,
         VkDescriptorSetLayoutBinding * bindings
     );
 
@@ -419,7 +419,8 @@ namespace MFA::RenderBackend
     // TODO: We need to ask for pool sizes instead
     std::shared_ptr<RT::DescriptorPool> CreateDescriptorPool(
         VkDevice device,
-        uint32_t const maxSets
+        uint32_t maxSets,
+        VkDescriptorPoolCreateFlags flags = 0
     );
 
     void DestroyDescriptorPool(
@@ -510,7 +511,7 @@ namespace MFA::RenderBackend
         uint32_t vertexOffset = 0,
         uint32_t firstInstance = 0
     );
-
+    // TODO: I think we should return unique ptr for all the cases and then use can decide what to do with them
     std::shared_ptr<RT::BufferGroup> CreateBufferGroup(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
@@ -530,7 +531,7 @@ namespace MFA::RenderBackend
     std::shared_ptr<RT::BufferGroup> CreateHostVisibleUniformBuffer(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
-        size_t bufferSize, 
+        size_t bufferSize,
         uint32_t count
     );
 
@@ -547,7 +548,7 @@ namespace MFA::RenderBackend
         VkDeviceSize bufferSize,
         uint32_t count
     );
-    
+
     std::shared_ptr<RT::BufferGroup> CreateStageBuffer(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
@@ -566,7 +567,7 @@ namespace MFA::RenderBackend
         RT::BufferAndMemory const& buffer,
         RT::BufferAndMemory const& stageBuffer
     );
-    
+
     std::shared_ptr<RT::BufferAndMemory> CreateVertexBuffer(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
@@ -574,13 +575,13 @@ namespace MFA::RenderBackend
         RT::BufferAndMemory const& stageBuffer,
         BaseBlob const& verticesBlob
     );
-    
+
     std::shared_ptr<RT::BufferAndMemory> CreateVertexBuffer(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
         VkDeviceSize bufferSize
     );
-    
+
     std::shared_ptr<RT::BufferGroup> CreateVertexBufferGroup(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
@@ -595,7 +596,7 @@ namespace MFA::RenderBackend
         RT::BufferAndMemory const& stageBuffer,
         BaseBlob const& indicesBlob
     );
-    
+
     std::shared_ptr<RT::BufferAndMemory> CreateIndexBuffer(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
@@ -609,7 +610,7 @@ namespace MFA::RenderBackend
         VkBufferUsageFlags usage,
         VkMemoryPropertyFlags properties
     );
-    
+
     void MapHostVisibleMemory(
         VkDevice device,
         VkDeviceMemory bufferMemory,
@@ -617,9 +618,9 @@ namespace MFA::RenderBackend
         size_t const size,
         void** outBufferData
     );
-    
+
     void UnMapHostVisibleMemory(VkDevice device, VkDeviceMemory bufferMemory);
-    
+
     void CopyDataToHostVisibleBuffer(
         VkDevice device,
         VkDeviceMemory bufferMemory,
@@ -630,6 +631,13 @@ namespace MFA::RenderBackend
         RT::CommandRecordState& recordState,
         VkPipelineLayout pipeline_layout,
         VkShaderStageFlags shader_stage,
+        uint32_t offset,
+        BaseBlob const & data
+    );
+
+    void PushConstants(
+        RT::CommandRecordState & recordState,
+        VkShaderStageFlags shaderStage,
         uint32_t offset,
         BaseBlob const & data
     );

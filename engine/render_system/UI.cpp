@@ -129,18 +129,18 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    int UI::EventWatch(SDL_Event* event)
+    int UI::EventWatch(SDL_Event *event)
     {
-        ImGuiIO& io = ImGui::GetIO();
+        ImGuiIO &io = ImGui::GetIO();
         switch (event->type)
         {
-            case SDL_TEXTINPUT:
+        case SDL_TEXTINPUT:
             {
                 io.AddInputCharactersUTF8(event->text.text);
                 return true;
             }
-            case SDL_KEYDOWN:
-            case SDL_KEYUP:
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:
             {
                 const int key = event->key.keysym.scancode;
                 IM_ASSERT(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown));
@@ -148,39 +148,44 @@ namespace MFA
                 io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
                 io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
                 io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-    #ifdef __PLATFORM_WIN__
+#ifdef __PLATFORM_WIN__
                 io.KeySuper = false;
-    #else
+#else
                 io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
-    #endif
+#endif
                 return true;
             }
-            case SDL_MOUSEWHEEL:
+        case SDL_MOUSEWHEEL:
             {
                 if (_myWindowID != event->wheel.windowID)
                     return false;
-                //IMGUI_DEBUG_LOG("wheel %.2f %.2f, precise %.2f %.2f\n", (float)event->wheel.x, (float)event->wheel.y, event->wheel.preciseX, event->wheel.preciseY);
-    #if SDL_VERSION_ATLEAST(2,0,18) // If this fails to compile on Emscripten: update to latest Emscripten!
+                    // IMGUI_DEBUG_LOG("wheel %.2f %.2f, precise %.2f %.2f\n", (float)event->wheel.x,
+                    // (float)event->wheel.y, event->wheel.preciseX, event->wheel.preciseY);
+#if SDL_VERSION_ATLEAST(2, 0, 18) // If this fails to compile on Emscripten: update to latest Emscripten!
                 float wheel_x = -event->wheel.preciseX;
                 float wheel_y = event->wheel.preciseY;
-    #else
+#else
                 float wheel_x = -(float)event->wheel.x;
                 float wheel_y = (float)event->wheel.y;
-    #endif
-    #ifdef __EMSCRIPTEN__
+#endif
+#ifdef __EMSCRIPTEN__
                 wheel_x /= 100.0f;
-    #endif
-                io.AddMouseSourceEvent(event->wheel.which == SDL_TOUCH_MOUSEID ? ImGuiMouseSource_TouchScreen : ImGuiMouseSource_Mouse);
+#endif
+                io.AddMouseSourceEvent(event->wheel.which == SDL_TOUCH_MOUSEID ? ImGuiMouseSource_TouchScreen
+                                                                               : ImGuiMouseSource_Mouse);
                 io.AddMouseWheelEvent(wheel_x, wheel_y);
                 return true;
             }
-            case SDL_WINDOWEVENT:
+        case SDL_WINDOWEVENT:
             {
-                // - When capturing mouse, SDL will send a bunch of conflicting LEAVE/ENTER event on every mouse move, but the final ENTER tends to be right.
+                // - When capturing mouse, SDL will send a bunch of conflicting LEAVE/ENTER event on every mouse move,
+                // but the final ENTER tends to be right.
                 // - However we won't get a correct LEAVE event for a captured window.
-                // - In some cases, when detaching a window from main viewport SDL may send SDL_WINDOWEVENT_ENTER one frame too late,
-                //   causing SDL_WINDOWEVENT_LEAVE on previous frame to interrupt drag operation by clear mouse position. This is why
-                //   we delay process the SDL_WINDOWEVENT_LEAVE events by one frame. See issue #5012 for details.
+                // - In some cases, when detaching a window from main viewport SDL may send SDL_WINDOWEVENT_ENTER one
+                // frame too late,
+                //   causing SDL_WINDOWEVENT_LEAVE on previous frame to interrupt drag operation by clear mouse
+                //   position. This is why we delay process the SDL_WINDOWEVENT_LEAVE events by one frame. See issue
+                //   #5012 for details.
                 Uint8 window_event = event->window.event;
                 if (window_event == SDL_WINDOWEVENT_ENTER)
                 {
@@ -194,6 +199,59 @@ namespace MFA
             }
         }
         return false;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+
+    void UI::DisplayDockSpace()
+    {
+        static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+        // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+        // because it would be confusing to have two docking targets within each others.
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+
+        if (MenuBarSignal.IsEmpty() == false)
+        {
+            window_flags |= ImGuiWindowFlags_MenuBar;
+        }
+
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+        // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+        // and handle the pass-thru hole, so we ask Begin() to not render a background.
+        if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+            window_flags |= ImGuiWindowFlags_NoBackground;
+
+        // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+        // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+        // all active windows docked into it will lose their parent and become undocked.
+        // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+        // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("DockSpace Demo", nullptr, window_flags);
+        ImGui::PopStyleVar();
+
+        ImGui::PopStyleVar(2);
+
+        MenuBarSignal.Emit();
+
+        // Submit the DockSpace
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("VulkanAppDockspace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+        }
+
+        ImGui::End();
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -297,7 +355,7 @@ namespace MFA
     
     //-------------------------------------------------------------------------------------------------
 
-	UI::UI(std::shared_ptr<DisplayRenderPass> displayRenderPass, bool lightMode)
+	UI::UI(std::shared_ptr<DisplayRenderPass> displayRenderPass, Params const & params)
     {
         _displayRenderPass = std::move(displayRenderPass);
 
@@ -344,7 +402,7 @@ namespace MFA
 
         CreatePipeline();
 
-        CreateFontTexture();
+        CreateFontTexture(params.fontCallback);
 
         BindKeyboard();
 
@@ -364,7 +422,7 @@ namespace MFA
 
         // ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 
-        if (lightMode == true)
+        if (params.lightMode == true)
         {
             ApplyLightStyles();
         }
@@ -372,7 +430,7 @@ namespace MFA
         {
             ApplyDarkStyles();    
         }
-        _darkMode = !lightMode;
+        _darkMode = !params.lightMode;
 
         io.SetClipboardTextFn = _IMGUISetClipboardText; 
         io.GetClipboardTextFn = _IMGUIGetClipboardText;
@@ -908,7 +966,7 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    void UI::CreateFontTexture()
+    void UI::CreateFontTexture(CustomFontCallback const & fontCallback)
     {
         // Load Fonts
         // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -926,21 +984,22 @@ namespace MFA
 
         ImGuiIO& io = ImGui::GetIO();
 
-        // io.Fonts->AddFontDefault();
-        // {
-        //     ImFont* font = io.Fonts->AddFontFromFileTTF(
-        //         Path::Instance()->Get("assets/fonts/PublicSans-Regular.ttf").c_str(),
-        //         10.0f
-        //     );
-        //     MFA_ASSERT(font != nullptr);
-        // }
+        if (fontCallback == nullptr)
         {
-            ImFont* font = io.Fonts->AddFontFromFileTTF(
-                Path::Instance()->Get("assets/fonts/PublicSans-Regular.ttf").c_str(),
-                16.0f
-            );
-            MFA_ASSERT(font != nullptr);
+            io.Fonts->AddFontDefault();
         }
+        else
+        {
+            fontCallback(io);
+            // auto const fontPath = Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMonoNL-Regular.ttf");
+            // MFA_ASSERT(std::filesystem::exists(fontPath));
+            // ImFont* font = io.Fonts->AddFontFromFileTTF(
+            //     fontPath.c_str(),
+            //     20.0f
+            // );
+            // MFA_ASSERT(font != nullptr);
+        }
+
         uint8_t* pixels = nullptr;
         int32_t width, height;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);

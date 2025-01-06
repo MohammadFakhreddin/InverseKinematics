@@ -164,6 +164,12 @@ set(EIGEN_BUILD_CMAKE_PACKAGE OFF CACHE BOOL "Enables the creation of EigenConfi
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/Eigen3")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/Eigen3/Eigen")
 
+### Shared ###############################################
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/shared")
+include_directories("${CMAKE_SOURCE_DIR}/shared")
+link_libraries(Shared)
+
 ##########################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/executables/visualization")

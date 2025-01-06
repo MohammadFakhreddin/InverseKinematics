@@ -129,9 +129,6 @@ namespace MFA
         std::vector<VkSemaphore> const & GetComputeSemaphores() const noexcept;
 
         [[nodiscard]]
-        std::vector<VkFence> const& GetComputeFences() const noexcept;
-
-        [[nodiscard]]
         std::vector<VkSemaphore> const & GetPresentSemaphores() const noexcept;
 
         [[nodiscard]]
@@ -142,7 +139,7 @@ namespace MFA
 
         [[nodiscard]]
         VkSemaphore GetGraphicSemaphore(RT::CommandRecordState const& recordState) const noexcept;
-        
+
         [[nodiscard]]
         VkSemaphore GetComputeSemaphore(RT::CommandRecordState const& recordState) const noexcept;
 
@@ -150,10 +147,7 @@ namespace MFA
         VkSemaphore GetPresentSemaphore(RT::CommandRecordState const& recordState) const noexcept;
 
         [[nodiscard]]
-        VkFence GetGraphicFence(RT::CommandRecordState const& recordState) const;
-
-    	[[nodiscard]]
-        VkFence GetComputeFence(RT::CommandRecordState const& recordState) const;
+        VkFence GetFence(RT::CommandRecordState const& recordState) const;
 
         [[nodiscard]]
         VkCommandBuffer GetComputeCommandBuffer(RT::CommandRecordState const& recordState) const;
@@ -197,7 +191,7 @@ namespace MFA
     private:
 
         bool _isValid = false;
-        
+
         std::string _applicationName {};
         SDL_Window * _window = nullptr;
         bool _resizable = false;
@@ -218,7 +212,7 @@ namespace MFA
         VkPhysicalDeviceProperties _physicalDeviceProperties{};
 
         VkSurfaceCapabilitiesKHR _surfaceCapabilities {};
-    
+
         uint32_t _swapChainImageCount {};
         uint32_t _maxFramePerFlight {};
         uint32_t _currentFrame{};
@@ -236,14 +230,13 @@ namespace MFA
 
         VkCommandPool _graphicCommandPool {};
         std::vector<VkCommandBuffer> _graphicCommandBuffer {};
-        std::vector<VkSemaphore> _graphicSemaphores {};
-        std::vector<VkFence> _graphicFences {};
+
+        std::vector<VkFence> _fences {};
 
         VkCommandPool _computeCommandPool {};
         std::vector<VkCommandBuffer> _computeCommandBuffer{};
         std::vector<VkSemaphore> _computeSemaphores {};
-        std::vector<VkFence> _computeFences {};
-    
+
         std::vector<VkSemaphore> _presentSemaphores {};
 
         VkFormat _depthFormat {};

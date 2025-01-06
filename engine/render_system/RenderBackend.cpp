@@ -288,7 +288,8 @@ namespace MFA::RenderBackend
             windowWidth, windowHeight,
             SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN */ | SDL_WINDOW_VULKAN
         );
-        SDL_CheckForError();
+        MFA_ASSERT(window != nullptr);
+        // SDL_CheckForError();
         return window;
     }
 
@@ -300,7 +301,7 @@ namespace MFA::RenderBackend
         SDL_DestroyWindow(window);
         SDL_CheckForError();
     }
-    
+
     //-------------------------------------------------------------------------------------------------
 
     VkInstance CreateInstance(char const * applicationName, SDL_Window * window)
@@ -452,8 +453,8 @@ namespace MFA::RenderBackend
             VkPhysicalDeviceFeatures features{};
 
             vkGetPhysicalDeviceFeatures(device, &features);
-            
-            
+
+
             /*MFA_LOG_INFO(
                 "Device number %d\nName: %s\nApi version: %d.%d.%d"
                 , i
@@ -464,15 +465,15 @@ namespace MFA::RenderBackend
             );*/
 
             auto deviceName = std::string(
-                properties.deviceName, 
+                properties.deviceName,
                 strlen(properties.deviceName)
             );
-            
+
             deviceName = String::ToLowerCase(deviceName.c_str());
-            
+
             bool isNvidia = deviceName.find("nvidia") != std::string::npos;
             bool isAmd = deviceName.find("amd") != std::string::npos;
-            
+
             if (i == 0 || isNvidia == true || isAmd == true)
             {
                 result.physicalDevice = device;
@@ -487,7 +488,7 @@ namespace MFA::RenderBackend
         }
 
         result.maxSampleCount = ComputeMaxUsableSampleCount(result.physicalDeviceProperties);
-        
+
         MFA_LOG_INFO("Selected device name: %s", result.physicalDeviceProperties.deviceName);
 
         return result;
@@ -698,20 +699,20 @@ namespace MFA::RenderBackend
     #endif
         enabledExtensionNames.emplace_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
         enabledExtensionNames.emplace_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
-        
+
         auto filteredExtensionNames = FilterSupportedDeviceExtensions(physicalDevice, enabledExtensionNames);
-        
+
         deviceCreateInfo.ppEnabledExtensionNames = filteredExtensionNames.data();
         deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(filteredExtensionNames.size());
         // Necessary for shader (for some reason)
         deviceCreateInfo.pEnabledFeatures = &enabledPhysicalDeviceFeatures;
         deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(DebugLayers.size());
         deviceCreateInfo.ppEnabledLayerNames = DebugLayers.data();
-   
+
 
         VK_Check(vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &logicalDevice.device));
         MFA_ASSERT(logicalDevice.device != nullptr);
-        MFA_LOG_INFO("Logical device create was successful");
+        //MFA_LOG_INFO("Logical device create was successful");
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &logicalDevice.physicalMemoryProperties);
 
         return logicalDevice;
@@ -773,7 +774,7 @@ namespace MFA::RenderBackend
             commandBuffers.data()
         ));
 
-        MFA_LOG_INFO("Allocated graphics command buffers.");
+        //MFA_LOG_INFO("Allocated graphics command buffers.");
 
         // Command buffer data gets recorded each time
         return commandBuffers;
@@ -1098,12 +1099,12 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
 	std::shared_ptr<RT::ImageViewGroup> CreateImageView(
-        VkDevice device, 
-        VkImage const& image, 
+        VkDevice device,
+        VkImage const& image,
 		VkFormat format,
-		VkImageAspectFlags aspectFlags, 
-		uint32_t mipmapCount, 
-		uint32_t layerCount, 
+		VkImageAspectFlags aspectFlags,
+		uint32_t mipmapCount,
+		uint32_t layerCount,
 		VkImageViewType viewType
     )
     {
@@ -1181,7 +1182,7 @@ namespace MFA::RenderBackend
             std::move(imageGroup),
             std::move(imageView),
             depthFormat
-            );
+        );
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -1365,7 +1366,7 @@ namespace MFA::RenderBackend
             pipelineLayout,
             pipeline
         );
-        
+
         return pipelineGroup;
     }
 
@@ -1427,7 +1428,7 @@ namespace MFA::RenderBackend
             pipelineLayout,
             pipeline
         );
-        
+
         return pipelineGroup;
     }
 
@@ -1507,10 +1508,10 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     std::shared_ptr<RT::SwapChainGroup> CreateSwapChain(
-        VkDevice device, 
+        VkDevice device,
         VkPhysicalDevice physicalDevice,
-	    VkSurfaceKHR windowSurface, 
-        VkSurfaceCapabilitiesKHR surfaceCapabilities, 
+	    VkSurfaceKHR windowSurface,
+        VkSurfaceCapabilitiesKHR surfaceCapabilities,
         VkSurfaceFormatKHR surfaceFormat,
 	    VkSwapchainKHR oldSwapChain
     )
@@ -1582,7 +1583,7 @@ namespace MFA::RenderBackend
         VkSwapchainKHR swapChain{};
         VK_Check(vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain));
 
-        MFA_LOG_INFO("Created swap chain");
+        //MFA_LOG_INFO("Created swap chain");
 
         //swapChainGroup.swapChainFormat = selected_surface_format.format;
         VkFormat const swapChainFormat = surfaceFormat.format;
@@ -1623,13 +1624,13 @@ namespace MFA::RenderBackend
             MFA_ASSERT(swapChainImageViews[imageIndex] != VK_NULL_HANDLE);
         }
 
-        MFA_LOG_INFO("Acquired swap chain images");
+        //MFA_LOG_INFO("Acquired swap chain images");
         return std::make_shared<RT::SwapChainGroup>(
             swapChain,
             swapChainFormat,
             swapChainImages,
             swapChainImageViews
-            );
+        );
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -1712,13 +1713,13 @@ namespace MFA::RenderBackend
         // Determine number of images for swap chain
         auto const imageCount = ComputeSwapChainImagesCount(surfaceCapabilities);
 
-        MFA_LOG_INFO(
-            "Surface extend width: %d, height: %d"
-            , surfaceCapabilities.currentExtent.width
-            , surfaceCapabilities.currentExtent.height
-        );
+        //MFA_LOG_INFO(
+        //    "Surface extend width: %d, height: %d"
+        //    , surfaceCapabilities.currentExtent.width
+        //    , surfaceCapabilities.currentExtent.height
+        //);
 
-        MFA_LOG_INFO("Using %d images for swap chain.", imageCount);
+        //MFA_LOG_INFO("Using %d images for swap chain.", imageCount);
         MFA_ASSERT(surfaceFormats.size() <= 255);
         // Select a surface format
         auto const selectedSurfaceFormat = ChooseSurfaceFormat(
@@ -1732,10 +1733,10 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     std::shared_ptr<RT::ColorImageGroup> CreateColorImage(
-        VkPhysicalDevice physicalDevice, 
+        VkPhysicalDevice physicalDevice,
         VkDevice device,
-	    VkExtent2D const& imageExtent, 
-		VkFormat const imageFormat, 
+	    VkExtent2D const& imageExtent,
+		VkFormat const imageFormat,
 		CreateColorImageOptions const& options
     )
     {
@@ -1777,11 +1778,11 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     VkRenderPass CreateRenderPass(
-        VkDevice device, 
-        VkAttachmentDescription* attachments, 
+        VkDevice device,
+        VkAttachmentDescription* attachments,
         uint32_t attachmentsCount,
-	    VkSubpassDescription* subPasses, 
-        uint32_t subPassesCount, 
+	    VkSubpassDescription* subPasses,
+        uint32_t subPassesCount,
         VkSubpassDependency* dependencies,
 	    uint32_t dependenciesCount
     )
@@ -1937,11 +1938,11 @@ namespace MFA::RenderBackend
 	    MFA_ASSERT(commandBuffer != nullptr);
 	    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     }
-    
+
     //-------------------------------------------------------------------------------------------------
 
     VkResult AcquireNextImage(
-        VkDevice device, 
+        VkDevice device,
         VkSemaphore imageAvailabilitySemaphore,
         VkSwapchainKHR const& swapChain,
         uint32_t& outImageIndex
@@ -2135,7 +2136,7 @@ namespace MFA::RenderBackend
 		    .pCode = shaderCode->As<uint32_t>(),
 	    };
 	    VK_Check(vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule));
-	    MFA_LOG_INFO("Creating shader module was successful");
+	    //MFA_LOG_INFO("Creating shader module was successful");
 	    gpuShader = std::make_shared<RT::GpuShader>(
 		    shaderModule,
 		    cpuShader->stage,
@@ -2153,7 +2154,7 @@ namespace MFA::RenderBackend
     }
 
     //-------------------------------------------------------------------------------------------------
-    
+
     std::shared_ptr<RT::DescriptorSetLayoutGroup> CreateDescriptorSetLayout(
         VkDevice device,
         uint8_t const bindings_count,
@@ -2173,9 +2174,9 @@ namespace MFA::RenderBackend
         ));
         return std::make_shared<RT::DescriptorSetLayoutGroup>(descriptorSetLayout);
     }
-    
+
     //-------------------------------------------------------------------------------------------------
-    
+
     void DestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout)
     {
         vkDestroyDescriptorSetLayout(
@@ -2189,7 +2190,8 @@ namespace MFA::RenderBackend
 
     std::shared_ptr<RT::DescriptorPool> CreateDescriptorPool(
         VkDevice device,
-        uint32_t const maxSets
+        uint32_t const maxSets,
+        VkDescriptorPoolCreateFlags flags
     )
     {
         std::vector<VkDescriptorPoolSize> poolSizes{};
@@ -2229,6 +2231,7 @@ namespace MFA::RenderBackend
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = maxSets;
+        poolInfo.flags |= flags;
 
         VkDescriptorPool descriptorPool{};
 
@@ -2286,7 +2289,7 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     void AutoBindDescriptorSet(
-        RT::CommandRecordState const& recordState, 
+        RT::CommandRecordState const& recordState,
         UpdateFrequency frequency,
         RT::DescriptorSetGroup const& descriptorGroup
 	)
@@ -2294,14 +2297,14 @@ namespace MFA::RenderBackend
         AutoBindDescriptorSet(
             recordState,
             frequency,
-            descriptorGroup.descriptorSets[recordState.frameIndex]
+            descriptorGroup.descriptorSets[recordState.frameIndex % descriptorGroup.descriptorSets.size()]
         );
     }
 
     //-------------------------------------------------------------------------------------------------
 
     void AutoBindDescriptorSet(
-        RT::CommandRecordState const& recordState, 
+        RT::CommandRecordState const& recordState,
         UpdateFrequency frequency,
 	    VkDescriptorSet descriptorSet
     )
@@ -2358,10 +2361,10 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     RT::DescriptorSetGroup CreateDescriptorSet(
-        VkDevice device, 
+        VkDevice device,
         VkDescriptorPool descriptorPool,
-	    VkDescriptorSetLayout descriptorSetLayout, 
-        uint32_t const descriptorSetCount, 
+	    VkDescriptorSetLayout descriptorSetLayout,
+        uint32_t const descriptorSetCount,
         uint8_t const schemasCount,
 	    VkWriteDescriptorSet* schemas
     )
@@ -2386,7 +2389,7 @@ namespace MFA::RenderBackend
 		    &allocInfo,
 		    descriptorSets.data()
 	    ));
-	    MFA_LOG_INFO("Create descriptor set is successful");
+	    //MFA_LOG_INFO("Create descriptor set is successful");
 
 	    if (schemasCount > 0 && schemas != nullptr)
 	    {
@@ -2406,10 +2409,10 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     void UpdateDescriptorSets(
-        VkDevice const device, 
-        uint8_t const descriptorSetCount, 
+        VkDevice const device,
+        uint8_t const descriptorSetCount,
 		VkDescriptorSet* descriptorSets,
-	    uint8_t const schemasCount, 
+	    uint8_t const schemasCount,
         VkWriteDescriptorSet* schemas
     )
     {
@@ -2527,9 +2530,9 @@ namespace MFA::RenderBackend
     std::shared_ptr<RT::BufferGroup> CreateBufferGroup(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
-        VkDeviceSize const bufferSize, 
+        VkDeviceSize const bufferSize,
         uint32_t const count,
-	    VkBufferUsageFlags bufferUsageFlagBits, 
+	    VkBufferUsageFlags bufferUsageFlagBits,
         VkMemoryPropertyFlags memoryPropertyFlags
     )
     {
@@ -2598,7 +2601,7 @@ namespace MFA::RenderBackend
     std::shared_ptr<RT::BufferGroup> CreateLocalStorageBuffer(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
-        size_t const bufferSize, 
+        size_t const bufferSize,
         uint32_t const count
     )
     {
@@ -2636,7 +2639,7 @@ namespace MFA::RenderBackend
     std::shared_ptr<RT::BufferGroup> CreateStageBuffer(
         VkDevice device,
         VkPhysicalDevice physicalDevice,
-        VkDeviceSize const bufferSize, 
+        VkDeviceSize const bufferSize,
         uint32_t const count
     )
     {
@@ -2697,7 +2700,7 @@ namespace MFA::RenderBackend
 
     void UpdateHostVisibleBuffer(
         VkDevice device,
-        RT::BufferAndMemory const& buffer, 
+        RT::BufferAndMemory const& buffer,
         BaseBlob const& data
     )
     {
@@ -2708,7 +2711,7 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     void UpdateLocalBuffer(
-        VkCommandBuffer commandBuffer, 
+        VkCommandBuffer commandBuffer,
         RT::BufferAndMemory const& buffer,
 	    RT::BufferAndMemory const& stageBuffer
     )
@@ -2760,7 +2763,7 @@ namespace MFA::RenderBackend
 		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	    );
     }
-    
+
 	//-------------------------------------------------------------------------------------------------
 
     std::shared_ptr<RT::BufferGroup> CreateVertexBufferGroup(
@@ -2771,8 +2774,8 @@ namespace MFA::RenderBackend
     )
     {
         return RB::CreateBufferGroup(
-            device, 
-            physicalDevice, 
+            device,
+            physicalDevice,
             bufferSize,
             bufferCount,
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -2786,7 +2789,7 @@ namespace MFA::RenderBackend
         VkDevice device,
         VkPhysicalDevice physicalDevice,
         VkCommandBuffer commandBuffer,
-	    RT::BufferAndMemory const& stageBuffer, 
+	    RT::BufferAndMemory const& stageBuffer,
         BaseBlob const& indicesBlob
     )
     {
@@ -2825,10 +2828,10 @@ namespace MFA::RenderBackend
     //-------------------------------------------------------------------------------------------------
 
     std::shared_ptr<RT::BufferAndMemory> CreateBuffer(
-        VkDevice device, 
+        VkDevice device,
         VkPhysicalDevice physicalDevice,
-	    VkDeviceSize const size, 
-        VkBufferUsageFlags const usage, 
+	    VkDeviceSize const size,
+        VkBufferUsageFlags const usage,
         VkMemoryPropertyFlags const properties
     )
     {
@@ -2866,9 +2869,9 @@ namespace MFA::RenderBackend
 	//-------------------------------------------------------------------------------------------------
 
     void MapHostVisibleMemory(
-        VkDevice device, 
-        VkDeviceMemory bufferMemory, 
-        size_t const offset, 
+        VkDevice device,
+        VkDeviceMemory bufferMemory,
+        size_t const offset,
         size_t const size,
 	    void** outBufferData
     )
@@ -2902,6 +2905,24 @@ namespace MFA::RenderBackend
             offset,
             static_cast<uint32_t>(data.Len()),
             data.Ptr()
+        );
+    }
+
+    //-------------------------------------------------------------------------------------------------
+
+    void PushConstants(
+        RT::CommandRecordState& recordState,
+        VkShaderStageFlags shaderStage,
+        uint32_t const offset,
+        BaseBlob const& data
+    )
+    {
+        PushConstants(
+            recordState,
+            recordState.pipeline->pipelineLayout,
+            shaderStage,
+            offset,
+            data
         );
     }
 

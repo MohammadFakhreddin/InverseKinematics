@@ -15,9 +15,20 @@ namespace MFA
 	{
 	public:
 
-		explicit UI(std::shared_ptr<DisplayRenderPass> displayRenderPass, bool lightMode = true);
+        using CustomFontCallback = std::function<void(ImGuiIO & io)>;
+
+        struct Params
+        {
+            bool lightMode = true;
+            CustomFontCallback fontCallback;
+        };
+
+		explicit UI(std::shared_ptr<DisplayRenderPass> displayRenderPass, Params const & params);
 
 		~UI();
+
+	    [[nodiscard]]
+	    ImFont* AddFont(char const * path);
 
         void Update();
 
@@ -29,6 +40,7 @@ namespace MFA
         inline static UI* Instance = nullptr;
 
         Signal<> UpdateSignal{};
+	    Signal<> MenuBarSignal{};
 
         [[nodiscard]]
         bool HasFocus() const;
@@ -120,6 +132,8 @@ namespace MFA
 	        value = enums[idx];
 	    }
 
+	    void DisplayDockSpace();
+
 	private:
 
         struct PushConstants
@@ -134,7 +148,7 @@ namespace MFA
 
         void CreatePipeline();
 
-        void CreateFontTexture();
+        void CreateFontTexture(CustomFontCallback const & fontCallback);
 
 		static void BindKeyboard();
 

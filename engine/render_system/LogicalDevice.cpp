@@ -5,6 +5,8 @@
 #include "BedrockPlatforms.hpp"
 #include "RenderBackend.hpp"
 
+#define USE_VALIDATION_LAYERS
+
 namespace MFA
 {
 
@@ -36,7 +38,7 @@ namespace MFA
     }
 
     //-------------------------------------------------------------------------------------------------
-    
+
     static bool IsResizeEvent(uint8_t const sdlEvent)
     {
         return sdlEvent == SDL_WINDOWEVENT_RESIZED;
@@ -55,6 +57,7 @@ namespace MFA
             SDL_Window * sdlWindow = SDL_GetWindowFromID(event->window.windowID);
             if (sdlWindow == static_cast<SDL_Window *>(_window))
             {
+                DeviceWaitIdle();
                 _windowResized = true;
             }
         }
@@ -101,10 +104,10 @@ namespace MFA
     }
 
     //-------------------------------------------------------------------------------------------------
-    
+
     static int SDLEventWatcher(void * data, SDL_Event * event)
     {
-        auto * device = LogicalDevice::Instance; 
+        auto * device = LogicalDevice::Instance;
         if (device != nullptr)
         {
 	        device->OnResizeEvent(event);
@@ -122,8 +125,7 @@ namespace MFA
         {
             return nullptr;
         }
-        //Instance = device.get();
-    	return device;
+        return device;
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -178,7 +180,7 @@ namespace MFA
         SDL_SetWindowMinimumSize(_window, 100, 100);
 
         SDL_AddEventWatch(SDLEventWatcher, this);
-        
+
         _vkInstance = RB::CreateInstance(
             _applicationName.c_str(),
             _window
@@ -209,7 +211,7 @@ namespace MFA
         _maxFramePerFlight = std::min(3u, _swapChainImageCount);
 
         MFA_LOG_INFO(
-            "ScreenWidth: %d \nScreenHeight: %d", 
+            "ScreenWidth: %d \nScreenHeight: %d",
             _surfaceCapabilities.currentExtent.width,
             _surfaceCapabilities.currentExtent.height
         );
@@ -266,15 +268,12 @@ namespace MFA
             _maxFramePerFlight,
             _graphicCommandPool
         );
-        _graphicSemaphores = RB::CreateSemaphores(
+
+        _fences = RB::CreateFence(
             _vkDevice,
             _maxFramePerFlight
         );
-        _graphicFences = RB::CreateFence(
-            _vkDevice,
-            _maxFramePerFlight
-        );
-        
+
         // Compute
         _computeCommandPool = RB::CreateCommandPool(_vkDevice, _computeQueueFamily);
         _computeCommandBuffer = RB::CreateCommandBuffers(
@@ -286,12 +285,8 @@ namespace MFA
             _vkDevice,
             _maxFramePerFlight
         );
-        _computeFences = RB::CreateFence(
-            _vkDevice,
-            _maxFramePerFlight
-        );
 
-        // Presentation 
+        // Presentation
         _presentSemaphores = RB::CreateSemaphores(
             _vkDevice,
             _maxFramePerFlight
@@ -299,7 +294,7 @@ namespace MFA
 
         _depthFormat = RB::FindDepthFormat(_physicalDevice);
 
-    #if defined(MFA_DEBUG)  // TODO Fix support for android
+    #if defined(MFA_DEBUG) and defined(USE_VALIDATION_LAYERS)
         _vkDebugReportCallbackExt = RB::CreateDebugCallback(
             _vkInstance,
             DebugCallback
@@ -330,10 +325,6 @@ namespace MFA
         SDL_DelEventWatch(SDLEventWatcher, _window);
 
         // Graphic
-        RB::DestroySemaphore(
-            _vkDevice,
-            _graphicSemaphores
-        );
         RB::DestroyCommandBuffers(
             _vkDevice,
             _graphicCommandPool,
@@ -366,18 +357,14 @@ namespace MFA
         );
         RB::DestroyFence(
             _vkDevice,
-            _graphicFences
-        );
-        RB::DestroyFence(
-            _vkDevice,
-            _computeFences
+            _fences
         );
 
         RB::DestroyLogicalDevice(_vkDevice);
 
         RB::DestroyWindowSurface(_vkInstance, _surface);
 
-    #ifdef MFA_DEBUG
+    #if defined(MFA_DEBUG) and defined(USE_VALIDATION_LAYERS)
         RB::DestroyDebugReportCallback(_vkInstance, _vkDebugReportCallbackExt);
     #endif
 
@@ -388,7 +375,6 @@ namespace MFA
 
     RT::CommandRecordState LogicalDevice::AcquireRecordState(VkSwapchainKHR swapChain)
     {
-	    // TODO: Separate this function into multiple ones
 	    MFA_ASSERT(_maxFramePerFlight > _currentFrame);
 	    RT::CommandRecordState recordState{ .renderPass = nullptr };
 	    if (_windowVisible == false || _windowResized == true)
@@ -407,11 +393,10 @@ namespace MFA
 
         auto const vkDevice = LogicalDevice::Instance->GetVkDevice();
 
-        auto const graphicFence = GetGraphicFence(recordState);
-        auto const computeFence = GetComputeFence(recordState);
-        RB::WaitForFence(vkDevice, {graphicFence, computeFence});
-        RB::ResetFences(vkDevice, {graphicFence, computeFence});
-        
+        auto const fence = GetFence(recordState);
+        RB::WaitForFence(vkDevice, {fence});
+        RB::ResetFences(vkDevice, {fence});
+
 	    // We ignore failed acquire of image because a resize will be triggered at end of pass
 	    RB::AcquireNextImage(
             vkDevice,
@@ -615,16 +600,9 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    std::vector<VkSemaphore> const& LogicalDevice::GetGraphicSemaphores() const noexcept
-    {
-	    return _graphicSemaphores;
-    }
-
-    //-------------------------------------------------------------------------------------------------
-
     std::vector<VkFence> const& LogicalDevice::GetGraphicFences() const noexcept
     {
-	    return _graphicFences;
+	    return _fences;
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -650,13 +628,6 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    std::vector<VkFence> const& LogicalDevice::GetComputeFences() const noexcept
-    {
-	    return _computeFences;
-    }
-
-    //-------------------------------------------------------------------------------------------------
-
     std::vector<VkSemaphore> const& LogicalDevice::GetPresentSemaphores() const noexcept
     {
 	    return _presentSemaphores;
@@ -678,13 +649,6 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    VkSemaphore LogicalDevice::GetGraphicSemaphore(RT::CommandRecordState const& recordState) const noexcept
-    {
-	    return _graphicSemaphores[recordState.frameIndex];
-    }
-
-    //-------------------------------------------------------------------------------------------------
-
     VkSemaphore LogicalDevice::GetComputeSemaphore(RT::CommandRecordState const& recordState) const noexcept
     {
 	    return _computeSemaphores[recordState.frameIndex];
@@ -699,16 +663,9 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    VkFence LogicalDevice::GetGraphicFence(RT::CommandRecordState const& recordState) const
+    VkFence LogicalDevice::GetFence(RT::CommandRecordState const& recordState) const
     {
-        return _graphicFences[recordState.frameIndex];
-    }
-
-    //-------------------------------------------------------------------------------------------------
-
-    VkFence LogicalDevice::GetComputeFence(RT::CommandRecordState const& recordState) const
-    {
-        return _computeFences[recordState.frameIndex];
+        return _fences[recordState.frameIndex];
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -731,7 +688,7 @@ namespace MFA
     {
         return _computeCommandBuffer[recordState.frameIndex];
     }
-    
+
     //-------------------------------------------------------------------------------------------------
 
     VkCommandBuffer LogicalDevice::GetGraphicCommandBuffer(RT::CommandRecordState const& recordState) const
@@ -801,7 +758,6 @@ namespace MFA
 
     void LogicalDevice::SubmitQueues(RT::CommandRecordState & recordState)
     {
-        const auto graphicSemaphore = GetGraphicSemaphore(recordState);
         const auto computeSemaphore = GetComputeSemaphore(recordState);
         const auto presentSemaphore = GetPresentSemaphore(recordState);
 
@@ -828,10 +784,10 @@ namespace MFA
 
             auto computeCommandBuffer = GetComputeCommandBuffer(recordState);
 
-            VkSubmitInfo submitInfo{
+            VkSubmitInfo const submitInfo{
                 .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-                .waitSemaphoreCount = 0,//1,
-                .pWaitSemaphores = nullptr,//&graphicSemaphore,
+                .waitSemaphoreCount = 0,
+                .pWaitSemaphores = nullptr,
                 .pWaitDstStageMask = &computeWaitStageMask,
                 .commandBufferCount = 1,
                 .pCommandBuffers = &computeCommandBuffer,
@@ -843,31 +799,30 @@ namespace MFA
                 _computeQueue,
                 1,
                 &submitInfo,
-                GetComputeFence(recordState)
+                nullptr
             );
         }
 
         if (hasGraphicSubmission)
         {
             // Submit graphic queue
-            std::vector<VkSemaphore> graphicWaitSemaphores{ presentSemaphore };
+            std::vector<VkSemaphore> graphicWaitSemaphores{presentSemaphore};
+
             if (hasComputeSubmission == true)
             {
                 graphicWaitSemaphores.emplace_back(computeSemaphore);
             }
+
             std::vector<VkPipelineStageFlags> graphicWaitDstStageMask{
                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
             };
+
             std::vector<VkSemaphore> graphicSignalSemaphores{};
-            if (hasComputeSubmission)
-            {
-                graphicSignalSemaphores.emplace_back(graphicSemaphore);
-            }
 
             auto graphicCommandBuffer = GetGraphicCommandBuffer(recordState);
 
-            VkSubmitInfo submitInfo {
+            VkSubmitInfo const submitInfo {
                 .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
                 .waitSemaphoreCount = static_cast<uint32_t>(graphicWaitSemaphores.size()),
                 .pWaitSemaphores = graphicWaitSemaphores.data(),
@@ -877,12 +832,12 @@ namespace MFA
                 .signalSemaphoreCount = static_cast<uint32_t>(graphicSignalSemaphores.size()),
                 .pSignalSemaphores = graphicSignalSemaphores.data(),
             };
-            
+
             RB::SubmitQueues(
                 _graphicQueue,
                 1,
                 &submitInfo,
-                GetGraphicFence(recordState)
+                GetFence(recordState)
             );
         }
     }
@@ -891,22 +846,20 @@ namespace MFA
 
     void LogicalDevice::Present(RT::CommandRecordState const & recordState, VkSwapchainKHR swapChain)
     {
-        const auto graphicSemaphore = GetGraphicSemaphore(recordState);
-        
         // Present drawn image
         // Note: semaphore here is not strictly necessary, because commands are processed in submission order within a single queue
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &graphicSemaphore;
+        presentInfo.waitSemaphoreCount = 0;
+        presentInfo.pWaitSemaphores = nullptr;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &swapChain;
         presentInfo.pImageIndices = &recordState.imageIndex;
-        
-        // TODO Move to renderBackend
+
         auto const res = vkQueuePresentKHR(_presentQueue, &presentInfo);
         if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR || _windowResized == true)
         {
+            DeviceWaitIdle();
             _windowResized = true;
         }
         else if (res != VK_SUCCESS)

@@ -1,7 +1,12 @@
 #include <cstdio>
 
+#include "VisualizationApp.hpp"
+
 int main()
 {
-    printf("Hello World!\n");
+    {
+        VisualizationApp app{};
+        app.Run();
+    }
     return 0;
 }
