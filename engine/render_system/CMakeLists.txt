@@ -31,15 +31,6 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/render_pass/RenderPass.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/render_pass/DisplayRenderPass.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/render_pass/DisplayRenderPass.cpp"
-
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/LinePipeline.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/LinePipeline.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/PointPipeline.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/PointPipeline.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/FlatShadingPipeline.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/FlatShadingPipeline.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/TextOverlayPipeline.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/TextOverlayPipeline.hpp"
     
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.cpp"
@@ -47,18 +38,9 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/ObserverCamera.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/ArcballCamera.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/ArcballCamera.cpp"
-    
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/LineRenderer.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/LineRenderer.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/PointRenderer.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/PointRenderer.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.cpp"
-    
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshRenderer.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshRenderer.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshInstance.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshInstance.cpp"
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/IShadingPipeline.hpp"
+
 )
 
 set(LIBRARY_NAME "RenderSystem")

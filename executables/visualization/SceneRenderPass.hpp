@@ -2,7 +2,6 @@
 
 #include "BufferTracker.hpp"
 #include "SceneRenderResource.hpp"
-#include "render_resource/RenderResource.hpp"
 
 class SceneRenderPass
 {

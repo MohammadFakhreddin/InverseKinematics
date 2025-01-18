@@ -6,15 +6,13 @@
 #include "SceneRenderPass.hpp"
 #include "Time.hpp"
 #include "UI.hpp"
-#include "pipeline/FlatShadingPipeline.hpp"
+#include "ShapePipeline.hpp"
 
 #include <SDL_events.h>
 
 class VisualizationApp
 {
 public:
-
-    using ScenePipeline = MFA::FlatShadingPipeline;
 
     explicit VisualizationApp();
 

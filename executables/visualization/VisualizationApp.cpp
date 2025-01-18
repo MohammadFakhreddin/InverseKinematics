@@ -262,7 +262,7 @@ void VisualizationApp::DisplaySceneWindow()
     _ui->BeginWindow("Scene");
     auto sceneWindowSize = ImGui::GetWindowSize();
     sceneWindowSize.y -= 45.0f;
-    sceneWindowSize.x -= 20.0f;
+    sceneWindowSize.x -= 15.0f;
     if (_sceneWindowSize.width != sceneWindowSize.x || _sceneWindowSize.height != sceneWindowSize.y)
     {
         _sceneWindowSize.width = sceneWindowSize.x;

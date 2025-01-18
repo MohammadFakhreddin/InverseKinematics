@@ -2,9 +2,6 @@
 
 set(EXECUTABLE "Visualization")
 
-set(EXECUTABLE_RESOURCES
-)
-
 list(
     APPEND EXECUTABLE_RESOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/VisualizationMain.cpp"
@@ -14,9 +11,14 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/SceneRenderPass.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/SceneRenderResource.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/SceneRenderResource.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ShapeGenerator.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ShapeGenerator.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ShapePipeline.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ShapePipeline.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ShapeRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ShapeRenderer.hpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})
-
 
 ########################################

@@ -26,7 +26,7 @@ void SceneRenderPass::Begin(VkCommandBuffer commandBuffer) const
     RB::AssignViewportAndScissorToCommandBuffer(imageExtent, commandBuffer);
 
     std::vector<VkClearValue> clearValues(2);
-    clearValues[0].color = VkClearColorValue{ .float32 = {1.0f, 1.0f, 1.0f, 1.0f } };
+    clearValues[0].color = VkClearColorValue{ .float32 = {0.1f, 0.1f, 0.12f, 1.0f } };
     clearValues[1].color = VkClearColorValue{ .float32 = {1.0f, 1.0f, 1.0f, 1.0f } };
 
     RB::BeginRenderPass(
