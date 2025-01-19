@@ -24,6 +24,9 @@ public:
     [[nodiscard]]
     std::shared_ptr<MFA::RT::ColorImageGroup> const & ColorImage() const {return _colorImage;}
 
+    [[nodiscard]]
+    std::shared_ptr<MFA::RT::DepthImageGroup> const & DepthImage() const {return _depthImage;}
+
 private:
 
     VkExtent2D const _imageExtent;
@@ -32,5 +35,6 @@ private:
 
     std::shared_ptr<MFA::RT::ColorImageGroup> _msaaImage;
     std::shared_ptr<MFA::RT::ColorImageGroup> _colorImage;
+    std::shared_ptr<MFA::RT::DepthImageGroup> _depthImage;
 
 };

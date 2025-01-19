@@ -5,6 +5,13 @@
 
 namespace ShapeGenerator
 {
-    std::vector<glm::vec3> Cylinder(float radius, float height, int segments);
-    std::vector<glm::vec3> Sphere(float radius, int slices, int stacks);
+    using Vertices = std::vector<glm::vec3>;
+    using Indices = std::vector<uint32_t>;
+    using Normals = std::vector<glm::vec3>;
+    using Mesh = std::tuple<Vertices, Indices, Normals>;
+
+    Mesh Cylinder(float radius, float height, int segments);
+
+    Mesh Sphere(float radius, int slices, int stacks);
+
 };

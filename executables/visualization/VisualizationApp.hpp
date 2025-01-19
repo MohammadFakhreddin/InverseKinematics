@@ -4,9 +4,11 @@
 #include "LogicalDevice.hpp"
 #include "RenderTypes.hpp"
 #include "SceneRenderPass.hpp"
+#include "ShapePipeline.hpp"
+#include "ShapeRenderer.hpp"
 #include "Time.hpp"
 #include "UI.hpp"
-#include "ShapePipeline.hpp"
+#include "camera/ArcballCamera.hpp"
 
 #include <SDL_events.h>
 
@@ -51,13 +53,24 @@ private:
     std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass{};
     std::shared_ptr<MFA::RT::SamplerGroup> _sampler{};
 
-    std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
-    std::shared_ptr<SceneRenderResource> _sceneRenderResource{};
+    std::vector<std::shared_ptr<SceneRenderPass>> _sceneRenderPassList{};
+    std::vector<std::shared_ptr<SceneRenderResource>> _sceneRenderResourceList{};
+    std::vector<ImTextureID> _sceneTextureID_List{};
+
     VkExtent2D _sceneWindowSize{800, 800};
     bool _sceneWindowResized = true;
-    ImTextureID _sceneTextureID{};
 
     ImFont* _defaultFont{};
     ImFont* _boldFont{};
+
+    std::shared_ptr<MFA::HostVisibleBufferTracker> _lightBufferTracker{};
+    std::shared_ptr<MFA::HostVisibleBufferTracker> _cameraBufferTracker{};
+    std::shared_ptr<MFA::ShapePipeline> _shapePipeline{};
+    std::unique_ptr<ShapeRenderer> _cylinderShapeRenderer{};
+    std::unique_ptr<ShapeRenderer> _sphereShapeRenderer{};
+
+    std::unique_ptr<MFA::ArcballCamera> _camera{};
+
+    int _activeFrameIndex{};
 
 };

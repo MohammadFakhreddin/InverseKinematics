@@ -1,5 +1,8 @@
 #include "VisualizationApp.hpp"
 
+#include "ShapeGenerator.hpp"
+#include "camera/ArcballCamera.hpp"
+
 using namespace MFA;
 
 //======================================================================================================================
@@ -48,6 +51,64 @@ VisualizationApp::VisualizationApp()
     _ui->UpdateSignal.Register([this]() -> void { OnUI(Time::DeltaTimeSec()); });
 
     _device->ResizeEventSignal2.Register([this]() -> void { Resize(); });
+
+    {
+        // Shape pipeline and buffers
+        // Light buffer
+        auto lightBufferGroup = RB::CreateHostVisibleUniformBuffer(
+            _device->GetVkDevice(),
+            _device->GetPhysicalDevice(),
+            sizeof(ShapePipeline::LightSource),
+            _device->GetMaxFramePerFlight()
+        );
+        _lightBufferTracker = std::make_shared<HostVisibleBufferTracker>(lightBufferGroup);
+        // Camera buffer
+        auto cameraBufferGroup = RB::CreateHostVisibleUniformBuffer(
+            _device->GetVkDevice(),
+            _device->GetPhysicalDevice(),
+            sizeof(ShapePipeline::ViewProjection),
+            _device->GetMaxFramePerFlight()
+        );
+        _cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBufferGroup);
+        // Shape pipeline
+        _shapePipeline = std::make_shared<ShapePipeline>(
+            _displayRenderPass,
+            lightBufferGroup,
+            cameraBufferGroup
+        );
+    }
+
+    {// Cylinder renderer
+        auto [vertices, indices, normals] = ShapeGenerator::Cylinder(0.5f, 1, 10);
+        _cylinderShapeRenderer = std::make_unique<ShapeRenderer>(
+            _shapePipeline,
+            (int)vertices.size(),
+            vertices.data(),
+            normals.data(),
+            (int)indices.size(),
+            indices.data()
+        );
+    }
+
+    {// Sphere renderer
+        auto [vertices, indices, normals] = ShapeGenerator::Sphere(0.5f, 10, 10);
+        _sphereShapeRenderer = std::make_unique<ShapeRenderer>(
+            _shapePipeline,
+            (int)vertices.size(),
+            vertices.data(),
+            normals.data(),
+            (int)indices.size(),
+            indices.data()
+        );
+    }
+
+    {// Camera
+        _camera = std::make_unique<MFA::ArcballCamera>(glm::vec3{}, -Math::ForwardVec3);
+        _camera->SetfovDeg(40.0f);
+        _camera->SetLocalPosition(glm::vec3{0.0f, 90.0f, 0.0f});
+        _camera->SetfarPlane(1000.0f);
+        _camera->SetnearPlane(0.010f);
+    }
 }
 
 //======================================================================================================================
@@ -84,6 +145,7 @@ void VisualizationApp::Run()
         auto recordState = _device->AcquireRecordState(_swapChainResource->GetSwapChainImages().swapChain);
         if (recordState.isValid == true)
         {
+            _activeFrameIndex = recordState.frameIndex;
             Render(recordState);
         }
 
@@ -99,6 +161,12 @@ void VisualizationApp::Run()
 
 void VisualizationApp::Update(float deltaTime)
 {
+    _camera->Update(deltaTime);
+    if (_camera->IsDirty())
+    {
+        _cameraBufferTracker->SetData(Alias{_camera->ViewProjection()});
+    }
+
     _ui->Update();
 
     if (_sceneWindowResized == true)
@@ -124,9 +192,20 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         RT::CommandBufferType::Graphic
     );
 
-    _sceneRenderPass->Begin(recordState.commandBuffer);
+    _lightBufferTracker->Update(recordState);
+    _cameraBufferTracker->Update(recordState);
 
-    _sceneRenderPass->End(recordState.commandBuffer);
+    _sceneRenderPassList[recordState.frameIndex]->Begin(recordState.commandBuffer);
+
+    std::vector<ShapePipeline::PushConstants> instances{
+        ShapePipeline::PushConstants{
+            .model = glm::identity<glm::mat4>(),
+            .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f}
+        }
+    };
+    _sphereShapeRenderer->Render(recordState, (int)instances.size(), instances.data());
+
+    _sceneRenderPassList[recordState.frameIndex]->End(recordState.commandBuffer);
 
     _displayRenderPass->Begin(recordState);
 
@@ -180,15 +259,28 @@ void VisualizationApp::OnUI(float deltaTimeSec)
 
 void VisualizationApp::PrepareSceneRenderPass()
 {
-    _sceneRenderResource = std::make_unique<SceneRenderResource>(_sceneWindowSize, VK_FORMAT_R32G32B32A32_SFLOAT);
-    _sceneRenderPass = std::make_unique<SceneRenderPass>(_sceneRenderResource);
-    if (_sceneTextureID == nullptr)
+    auto maxFramesPerFlight = LogicalDevice::Instance->GetMaxFramePerFlight();
+    _sceneRenderPassList.resize(maxFramesPerFlight);
+    _sceneRenderResourceList.resize(maxFramesPerFlight);
+    _sceneTextureID_List.resize(maxFramesPerFlight);
+
+    for (int i = 0; i < maxFramesPerFlight; i++)
     {
-        _sceneTextureID = _ui->AddTexture(_sampler->sampler, _sceneRenderResource->ColorImage()->imageView->imageView);
-    }
-    else
-    {
-        _ui->UpdateTexture(_sceneTextureID, _sampler->sampler, _sceneRenderResource->ColorImage()->imageView->imageView);
+        auto & sceneRenderResource = _sceneRenderResourceList[i];
+        auto & sceneRenderPass = _sceneRenderPassList[i];
+        auto & sceneTextureID = _sceneTextureID_List[i];
+
+        sceneRenderResource = std::make_shared<SceneRenderResource>(_sceneWindowSize, LogicalDevice::Instance->GetSurfaceFormat().format);
+        sceneRenderPass = std::make_unique<SceneRenderPass>(sceneRenderResource);
+
+        if (sceneTextureID == nullptr)
+        {
+            sceneTextureID = _ui->AddTexture(_sampler->sampler, sceneRenderResource->ColorImage()->imageView->imageView);
+        }
+        else
+        {
+            _ui->UpdateTexture(sceneTextureID, _sampler->sampler, sceneRenderResource->ColorImage()->imageView->imageView);
+        }
     }
 }
 
@@ -269,7 +361,10 @@ void VisualizationApp::DisplaySceneWindow()
         _sceneWindowSize.height = sceneWindowSize.y;
         _sceneWindowResized = true;
     }
-    ImGui::Image(_sceneTextureID, sceneWindowSize);
+    if (_activeFrameIndex < _sceneTextureID_List.size())
+    {
+        ImGui::Image(_sceneTextureID_List[_activeFrameIndex], sceneWindowSize);
+    }
     _ui->EndWindow();
 }
 

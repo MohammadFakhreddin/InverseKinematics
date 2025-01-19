@@ -33,7 +33,7 @@ cbuffer {
 PSOut main(PSIn input) {
     PSOut output;
 
-    float3 color = pushConsts.color;
+    float3 color = pushConsts.color.rgb;
 
     float ambient = 0.25f;
 
@@ -44,7 +44,7 @@ PSOut main(PSIn input) {
     // Gamma correct
     color2 = pow(color2, float3(1.0f/2.2f));
 
-    output.color = float4(color2, alpha);
+    output.color = float4(color2, pushConsts.color.a);
 
     return output;
 }

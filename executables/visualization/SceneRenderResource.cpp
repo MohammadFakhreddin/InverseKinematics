@@ -15,7 +15,7 @@ SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageF
 
     _msaaSampleCount = device->GetMaxSampleCount();
 
-    {
+    {// MSAA Image
         RB::CreateColorImageOptions params{};
         params.samplesCount = device->GetMaxSampleCount();
         params.imageType = VK_IMAGE_TYPE_2D;
@@ -30,7 +30,7 @@ SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageF
         );
     }
 
-    {
+    {// Color Image
         RB::CreateColorImageOptions params{};
         params.samplesCount = VK_SAMPLE_COUNT_1_BIT;
         params.imageType = VK_IMAGE_TYPE_2D;
@@ -44,6 +44,19 @@ SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageF
             _imageExtent,
             _imageFormat,
             params
+        );
+    }
+
+    {// Depth Image
+        _depthImage = RB::CreateDepthImage(
+            LogicalDevice::Instance->GetPhysicalDevice(),
+            LogicalDevice::Instance->GetVkDevice(),
+            _imageExtent,
+            LogicalDevice::Instance->GetDepthFormat(),
+            RB::CreateDepthImageOptions{
+                .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                .samplesCount = LogicalDevice::Instance->GetMaxSampleCount()
+            }
         );
     }
 }

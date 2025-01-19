@@ -11,10 +11,10 @@ using namespace MFA;
 ShapeRenderer::ShapeRenderer(
     std::shared_ptr<Pipeline> pipeline,
     int const vertexCount,
-    glm::vec3 const * vertices,
-    glm::vec3 const * normals,
-    int indexCount,
-    int const * indices
+    Vertex const * vertices,
+    Normal const * normals,
+    int const indexCount,
+    Index const * indices
 )
     : _pipeline(std::move(pipeline))
     , _vertexCount(vertexCount)
@@ -137,7 +137,7 @@ std::shared_ptr<MFA::RT::BufferGroup> ShapeRenderer::GenerateIndexBuffer(
     auto const indexStageBuffer = RB::CreateStageBuffer(
         device->GetVkDevice(),
         device->GetPhysicalDevice(),
-        indexCount * sizeof(Index),
+        indexBlob.Len(),
         1
     );
 

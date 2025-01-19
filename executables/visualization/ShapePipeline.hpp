@@ -88,7 +88,6 @@ namespace MFA
         std::shared_ptr<RT::DescriptorPool> mDescriptorPool{};
 
     	std::shared_ptr<RT::DescriptorSetLayoutGroup> mPerPipelineDescriptorLayout{};
-        std::shared_ptr<RT::DescriptorSetLayoutGroup> mPerGeometryDescriptorLayout{};
 
         std::shared_ptr<RT::PipelineGroup> mPipeline{};
         std::shared_ptr<RT::BufferGroup> mViewProjBuffer{};

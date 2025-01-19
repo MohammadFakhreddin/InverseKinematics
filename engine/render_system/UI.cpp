@@ -396,7 +396,7 @@ namespace MFA
 		// ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f, &fontConfig);
 		// io.FontDefault = robotoFont;
 
-        _descriptorPool = RB::CreateDescriptorPool(LogicalDevice::Instance->GetVkDevice(), LogicalDevice::Instance->GetMaxFramePerFlight());
+        _descriptorPool = RB::CreateDescriptorPool(LogicalDevice::Instance->GetVkDevice(), 1000);
 
         CreateDescriptorSetLayout();
 

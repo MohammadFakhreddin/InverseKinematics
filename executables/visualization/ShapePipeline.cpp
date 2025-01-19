@@ -38,7 +38,6 @@ namespace MFA
 	{
 		mPipeline = nullptr;
 		mPerPipelineDescriptorLayout = nullptr;
-		mPerGeometryDescriptorLayout = nullptr;
 		mDescriptorPool = nullptr;
 	}
 
@@ -117,14 +116,14 @@ namespace MFA
 		// Vertex shader
 		{
 			bool success = Importer::CompileShaderToSPV(
-				Path::Instance()->Get("shaders/flat_shading_pipeline/ShapePipeline.vert.hlsl"),
-				Path::Instance()->Get("shaders/flat_shading_pipeline/ShapePipeline.vert.spv"),
+				Path::Instance()->Get("shaders/shape_pipeline/ShapePipeline.vert.hlsl"),
+				Path::Instance()->Get("shaders/shape_pipeline/ShapePipeline.vert.spv"),
 				"vert"
 			);
 			MFA_ASSERT(success == true);
 		}
 		auto cpuVertexShader = Importer::ShaderFromSPV(
-			Path::Instance()->Get("shaders/flat_shading_pipeline/ShapePipeline.vert.spv"),
+			Path::Instance()->Get("shaders/shape_pipeline/ShapePipeline.vert.spv"),
 			VK_SHADER_STAGE_VERTEX_BIT,
 			"main"
 		);
@@ -136,14 +135,14 @@ namespace MFA
 		// Fragment shader
 		{
 			bool success = Importer::CompileShaderToSPV(
-				Path::Instance()->Get("shaders/flat_shading_pipeline/ShapePipeline.frag.hlsl"),
-				Path::Instance()->Get("shaders/flat_shading_pipeline/ShapePipeline.frag.spv"),
+				Path::Instance()->Get("shaders/shape_pipeline/ShapePipeline.frag.hlsl"),
+				Path::Instance()->Get("shaders/shape_pipeline/ShapePipeline.frag.spv"),
 				"frag"
 			);
 			MFA_ASSERT(success == true);
 		}
 		auto cpuFragmentShader = Importer::ShaderFromSPV(
-			Path::Instance()->Get("shaders/flat_shading_pipeline/ShapePipeline.frag.spv"),
+			Path::Instance()->Get("shaders/shape_pipeline/ShapePipeline.frag.spv"),
 			VK_SHADER_STAGE_FRAGMENT_BIT,
 			"main"
 		);
@@ -193,10 +192,7 @@ namespace MFA
 			}
 		};
 
-		std::vector<VkDescriptorSetLayout> descriptorSetLayouts{
-			mPerPipelineDescriptorLayout->descriptorSetLayout,
-			mPerGeometryDescriptorLayout->descriptorSetLayout
-		};
+		std::vector<VkDescriptorSetLayout> descriptorSetLayouts{mPerPipelineDescriptorLayout->descriptorSetLayout};
 		
 		const auto pipelineLayout = RB::CreatePipelineLayout(
 			LogicalDevice::Instance->GetVkDevice(),

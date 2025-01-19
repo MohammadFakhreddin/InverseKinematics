@@ -10,7 +10,7 @@ public:
     using Pipeline = MFA::ShapePipeline;
     using Vertex = glm::vec3;
     using Normal = glm::vec3;
-    using Index = int;
+    using Index = uint32_t;
 
     explicit ShapeRenderer(
         std::shared_ptr<Pipeline> pipeline,
