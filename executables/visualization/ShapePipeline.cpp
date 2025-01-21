@@ -1,9 +1,10 @@
 #include "ShapePipeline.hpp"
 
 #include "BedrockPath.hpp"
-#include "ImportShader.hpp"
 #include "DescriptorSetSchema.hpp"
+#include "ImportShader.hpp"
 #include "LogicalDevice.hpp"
+#include "SceneRenderPass.hpp"
 
 namespace MFA
 {
@@ -11,14 +12,14 @@ namespace MFA
 	//-------------------------------------------------------------------------------------------------
 
 	ShapePipeline::ShapePipeline(
-		std::shared_ptr<DisplayRenderPass> displayRenderPass,
+		VkRenderPass renderPass,
 		std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
 		std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
 		Params params
 	)
 		: _params(params)
 	{
-		mDisplayRenderPass = std::move(displayRenderPass);
+		mRenderPass = renderPass;
 		mViewProjBuffer = std::move(viewProjectionBuffer);
         mLightSourceBuffer = std::move(lightSourceBuffer);
 
@@ -178,7 +179,7 @@ namespace MFA
 		RB::CreateGraphicPipelineOptions pipelineOptions{};
 		pipelineOptions.useStaticViewportAndScissor = false;
 		pipelineOptions.primitiveTopology = _params.topology;
-		pipelineOptions.rasterizationSamples = LogicalDevice::Instance->GetMaxSampleCount();
+		pipelineOptions.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;// LogicalDevice::Instance->GetMaxSampleCount();
 		pipelineOptions.cullMode = _params.cullModeFlags;
 		pipelineOptions.colorBlendAttachments.blendEnable = VK_TRUE;
 		pipelineOptions.polygonMode = _params.polygonMode;
@@ -213,7 +214,7 @@ namespace MFA
 			static_cast<uint8_t>(inputAttributeDescriptions.size()),
 			inputAttributeDescriptions.data(),
 			surfaceCapabilities.currentExtent,
-			mDisplayRenderPass->GetVkRenderPass(),
+			mRenderPass,
 			pipelineLayout,
 			pipelineOptions
 		);

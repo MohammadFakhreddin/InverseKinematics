@@ -53,12 +53,12 @@ private:
     std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass{};
     std::shared_ptr<MFA::RT::SamplerGroup> _sampler{};
 
-    std::vector<std::shared_ptr<SceneRenderPass>> _sceneRenderPassList{};
-    std::vector<std::shared_ptr<SceneRenderResource>> _sceneRenderResourceList{};
+    std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
+    std::shared_ptr<SceneRenderResource> _sceneRenderResource{};
     std::vector<ImTextureID> _sceneTextureID_List{};
 
     VkExtent2D _sceneWindowSize{800, 800};
-    bool _sceneWindowResized = true;
+    bool _sceneWindowResized = false;
 
     ImFont* _defaultFont{};
     ImFont* _boldFont{};
@@ -71,6 +71,6 @@ private:
 
     std::unique_ptr<MFA::ArcballCamera> _camera{};
 
-    int _activeFrameIndex{};
+    int _activeImageIndex{};
 
 };

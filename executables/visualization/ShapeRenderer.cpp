@@ -62,8 +62,6 @@ void ShapeRenderer::Render(
         0
     );
 
-    _pipeline->BindPipeline(recordState);
-
     for (int i = 0; i < instanceCount; ++i)
     {
         _pipeline->SetPushConstants(

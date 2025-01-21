@@ -52,6 +52,8 @@ VisualizationApp::VisualizationApp()
 
     _device->ResizeEventSignal2.Register([this]() -> void { Resize(); });
 
+    PrepareSceneRenderPass();
+
     {
         // Shape pipeline and buffers
         // Light buffer
@@ -72,7 +74,7 @@ VisualizationApp::VisualizationApp()
         _cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBufferGroup);
         // Shape pipeline
         _shapePipeline = std::make_shared<ShapePipeline>(
-            _displayRenderPass,
+            _sceneRenderPass->GetRenderPass(),
             lightBufferGroup,
             cameraBufferGroup
         );
@@ -145,7 +147,7 @@ void VisualizationApp::Run()
         auto recordState = _device->AcquireRecordState(_swapChainResource->GetSwapChainImages().swapChain);
         if (recordState.isValid == true)
         {
-            _activeFrameIndex = recordState.frameIndex;
+            _activeImageIndex = recordState.imageIndex;
             Render(recordState);
         }
 
@@ -169,12 +171,12 @@ void VisualizationApp::Update(float deltaTime)
 
     _ui->Update();
 
-    if (_sceneWindowResized == true)
-    {
-        _device->DeviceWaitIdle();
-        PrepareSceneRenderPass();
-        _sceneWindowResized = false;
-    }
+    // if (_sceneWindowResized == true)
+    // {
+    //     _device->DeviceWaitIdle();
+    //     PrepareSceneRenderPass();
+    //     _sceneWindowResized = false;
+    // }
 }
 
 //======================================================================================================================
@@ -195,7 +197,7 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     _lightBufferTracker->Update(recordState);
     _cameraBufferTracker->Update(recordState);
 
-    _sceneRenderPassList[recordState.frameIndex]->Begin(recordState.commandBuffer);
+    _sceneRenderPass->Begin(recordState);
 
     std::vector<ShapePipeline::PushConstants> instances{
         ShapePipeline::PushConstants{
@@ -205,7 +207,7 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     };
     _sphereShapeRenderer->Render(recordState, (int)instances.size(), instances.data());
 
-    _sceneRenderPassList[recordState.frameIndex]->End(recordState.commandBuffer);
+    _sceneRenderPass->End(recordState);
 
     _displayRenderPass->Begin(recordState);
 
@@ -259,27 +261,23 @@ void VisualizationApp::OnUI(float deltaTimeSec)
 
 void VisualizationApp::PrepareSceneRenderPass()
 {
-    auto maxFramesPerFlight = LogicalDevice::Instance->GetMaxFramePerFlight();
-    _sceneRenderPassList.resize(maxFramesPerFlight);
-    _sceneRenderResourceList.resize(maxFramesPerFlight);
-    _sceneTextureID_List.resize(maxFramesPerFlight);
+    _sceneRenderResource = std::make_shared<SceneRenderResource>(_sceneWindowSize, LogicalDevice::Instance->GetSurfaceFormat().format);
+    _sceneRenderPass = std::make_unique<SceneRenderPass>(_sceneRenderResource);
 
-    for (int i = 0; i < maxFramesPerFlight; i++)
+    auto const maxImageCount = LogicalDevice::Instance->GetSwapChainImageCount();
+    _sceneTextureID_List.resize(maxImageCount);
+
+    for (int imageIndex = 0; imageIndex < maxImageCount; imageIndex++)
     {
-        auto & sceneRenderResource = _sceneRenderResourceList[i];
-        auto & sceneRenderPass = _sceneRenderPassList[i];
-        auto & sceneTextureID = _sceneTextureID_List[i];
-
-        sceneRenderResource = std::make_shared<SceneRenderResource>(_sceneWindowSize, LogicalDevice::Instance->GetSurfaceFormat().format);
-        sceneRenderPass = std::make_unique<SceneRenderPass>(sceneRenderResource);
+        auto & sceneTextureID = _sceneTextureID_List[imageIndex];
 
         if (sceneTextureID == nullptr)
         {
-            sceneTextureID = _ui->AddTexture(_sampler->sampler, sceneRenderResource->ColorImage()->imageView->imageView);
+            sceneTextureID = _ui->AddTexture(_sampler->sampler, _sceneRenderResource->MSAA_Image(imageIndex).imageView->imageView);
         }
         else
         {
-            _ui->UpdateTexture(sceneTextureID, _sampler->sampler, sceneRenderResource->ColorImage()->imageView->imageView);
+            _ui->UpdateTexture(sceneTextureID, _sampler->sampler, _sceneRenderResource->MSAA_Image(imageIndex).imageView->imageView);
         }
     }
 }
@@ -361,9 +359,9 @@ void VisualizationApp::DisplaySceneWindow()
         _sceneWindowSize.height = sceneWindowSize.y;
         _sceneWindowResized = true;
     }
-    if (_activeFrameIndex < _sceneTextureID_List.size())
+    if (_activeImageIndex < _sceneTextureID_List.size())
     {
-        ImGui::Image(_sceneTextureID_List[_activeFrameIndex], sceneWindowSize);
+        ImGui::Image(_sceneTextureID_List[_activeImageIndex], sceneWindowSize);
     }
     _ui->EndWindow();
 }

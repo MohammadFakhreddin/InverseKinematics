@@ -208,7 +208,8 @@ namespace MFA
         // Find surface capabilities
         _surfaceCapabilities = RB::GetSurfaceCapabilities(_physicalDevice, _surface);
         _swapChainImageCount = RB::ComputeSwapChainImagesCount(_surfaceCapabilities);
-        _maxFramePerFlight = std::min(3u, _swapChainImageCount);
+        // Temporary
+        _maxFramePerFlight = _swapChainImageCount;//std::min(3u, _swapChainImageCount);
 
         MFA_LOG_INFO(
             "ScreenWidth: %d \nScreenHeight: %d",

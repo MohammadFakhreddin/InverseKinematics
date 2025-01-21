@@ -11,9 +11,9 @@ public:
     ~SceneRenderPass();
 
     // This is a special case so we don't need record state
-    void Begin(VkCommandBuffer commandBuffer) const;
+    void Begin(MFA::RT::CommandRecordState const & recordState) const;
 
-    void End(VkCommandBuffer commandBuffer);
+    void End(MFA::RT::CommandRecordState const & recordState);
 
     [[nodiscard]]
     VkRenderPass GetRenderPass() const;
@@ -26,6 +26,6 @@ private:
 
     std::shared_ptr<SceneRenderResource> _renderResource;
     std::unique_ptr<MFA::RT::RenderPass> _renderPass;
-    std::unique_ptr<MFA::RT::FrameBuffer> _frameBuffer;
+    std::vector<std::unique_ptr<MFA::RT::FrameBuffer>> _frameBufferList;
 
 };

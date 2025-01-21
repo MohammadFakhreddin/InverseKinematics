@@ -77,7 +77,7 @@ namespace ShapeGenerator
 
     //======================================================================================================================
 
-    Mesh ShapeGenerator::Sphere(float radius, int const slices, int const stacks)
+    Mesh Sphere(float radius, int const slices, int const stacks)
     {
         Vertices vertices{};
         Indices indices{};

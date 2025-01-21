@@ -19,13 +19,40 @@ public:
     VkSampleCountFlagBits MSAA_SampleCount() const {return _msaaSampleCount;}
 
     [[nodiscard]]
-    MFA::RT::ColorImageGroup const & MSAA_Image() const {return *_msaaImage;}
+    MFA::RT::ColorImageGroup const & MSAA_Image(MFA::RT::CommandRecordState const & recordState) const
+    {
+        return *_msaaImageList[recordState.imageIndex];
+    }
 
     [[nodiscard]]
-    std::shared_ptr<MFA::RT::ColorImageGroup> const & ColorImage() const {return _colorImage;}
+    MFA::RT::ColorImageGroup const & MSAA_Image(int const imageIndex) const
+    {
+        return *_msaaImageList[imageIndex];
+    }
+
+    // [[nodiscard]]
+    // std::shared_ptr<MFA::RT::ColorImageGroup> const & ColorImage(MFA::RT::CommandRecordState const & recordState) const
+    // {
+    //     return _colorImageList[recordState.imageIndex];
+    // }
+    //
+    // [[nodiscard]]
+    // std::shared_ptr<MFA::RT::ColorImageGroup> const & ColorImage(int const imageIndex) const
+    // {
+    //     return _colorImageList[imageIndex];
+    // }
 
     [[nodiscard]]
-    std::shared_ptr<MFA::RT::DepthImageGroup> const & DepthImage() const {return _depthImage;}
+    std::shared_ptr<MFA::RT::DepthImageGroup> const & DepthImage(MFA::RT::CommandRecordState const & recordState) const
+    {
+        return _depthImageList[recordState.imageIndex];
+    }
+
+    [[nodiscard]]
+    std::shared_ptr<MFA::RT::DepthImageGroup> const & DepthImage(int const imageIndex) const
+    {
+        return _depthImageList[imageIndex];
+    }
 
 private:
 
@@ -33,8 +60,8 @@ private:
     VkFormat const _imageFormat;
     VkSampleCountFlagBits _msaaSampleCount;
 
-    std::shared_ptr<MFA::RT::ColorImageGroup> _msaaImage;
-    std::shared_ptr<MFA::RT::ColorImageGroup> _colorImage;
-    std::shared_ptr<MFA::RT::DepthImageGroup> _depthImage;
+    std::vector<std::shared_ptr<MFA::RT::ColorImageGroup>> _msaaImageList;
+    // std::vector<std::shared_ptr<MFA::RT::ColorImageGroup>> _colorImageList;
+    std::vector<std::shared_ptr<MFA::RT::DepthImageGroup>> _depthImageList;
 
 };

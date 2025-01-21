@@ -55,7 +55,7 @@ namespace MFA
         };
 
         explicit ShapePipeline(
-            std::shared_ptr<DisplayRenderPass> displayRenderPass,
+            VkRenderPass renderPass,
             std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
             std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
             Params params = Params {
@@ -95,7 +95,7 @@ namespace MFA
 
         RT::DescriptorSetGroup mPerPipelineDescriptorSetGroup{};
 
-        std::shared_ptr<DisplayRenderPass> mDisplayRenderPass{};
+        VkRenderPass mRenderPass{};
 
         Params _params{};
     };
