@@ -273,11 +273,11 @@ void VisualizationApp::PrepareSceneRenderPass()
 
         if (sceneTextureID == nullptr)
         {
-            sceneTextureID = _ui->AddTexture(_sampler->sampler, _sceneRenderResource->MSAA_Image(imageIndex).imageView->imageView);
+            sceneTextureID = _ui->AddTexture(_sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
         }
         else
         {
-            _ui->UpdateTexture(sceneTextureID, _sampler->sampler, _sceneRenderResource->MSAA_Image(imageIndex).imageView->imageView);
+            _ui->UpdateTexture(sceneTextureID, _sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
         }
     }
 }

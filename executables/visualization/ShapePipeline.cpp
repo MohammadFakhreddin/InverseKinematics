@@ -179,7 +179,7 @@ namespace MFA
 		RB::CreateGraphicPipelineOptions pipelineOptions{};
 		pipelineOptions.useStaticViewportAndScissor = false;
 		pipelineOptions.primitiveTopology = _params.topology;
-		pipelineOptions.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;// LogicalDevice::Instance->GetMaxSampleCount();
+		pipelineOptions.rasterizationSamples = LogicalDevice::Instance->GetMaxSampleCount();
 		pipelineOptions.cullMode = _params.cullModeFlags;
 		pipelineOptions.colorBlendAttachments.blendEnable = VK_TRUE;
 		pipelineOptions.polygonMode = _params.polygonMode;

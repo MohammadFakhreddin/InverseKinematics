@@ -30,28 +30,28 @@ public:
         return *_msaaImageList[imageIndex];
     }
 
-    // [[nodiscard]]
-    // std::shared_ptr<MFA::RT::ColorImageGroup> const & ColorImage(MFA::RT::CommandRecordState const & recordState) const
-    // {
-    //     return _colorImageList[recordState.imageIndex];
-    // }
-    //
-    // [[nodiscard]]
-    // std::shared_ptr<MFA::RT::ColorImageGroup> const & ColorImage(int const imageIndex) const
-    // {
-    //     return _colorImageList[imageIndex];
-    // }
-
     [[nodiscard]]
-    std::shared_ptr<MFA::RT::DepthImageGroup> const & DepthImage(MFA::RT::CommandRecordState const & recordState) const
+    MFA::RT::ColorImageGroup const & ColorImage(MFA::RT::CommandRecordState const & recordState) const
     {
-        return _depthImageList[recordState.imageIndex];
+        return *_colorImageList[recordState.imageIndex];
     }
 
     [[nodiscard]]
-    std::shared_ptr<MFA::RT::DepthImageGroup> const & DepthImage(int const imageIndex) const
+    MFA::RT::ColorImageGroup const & ColorImage(int const imageIndex) const
     {
-        return _depthImageList[imageIndex];
+        return *_colorImageList[imageIndex];
+    }
+
+    [[nodiscard]]
+    MFA::RT::DepthImageGroup const & DepthImage(MFA::RT::CommandRecordState const & recordState) const
+    {
+        return *_depthImageList[recordState.imageIndex];
+    }
+
+    [[nodiscard]]
+    MFA::RT::DepthImageGroup const & DepthImage(int const imageIndex) const
+    {
+        return *_depthImageList[imageIndex];
     }
 
 private:
@@ -61,7 +61,7 @@ private:
     VkSampleCountFlagBits _msaaSampleCount;
 
     std::vector<std::shared_ptr<MFA::RT::ColorImageGroup>> _msaaImageList;
-    // std::vector<std::shared_ptr<MFA::RT::ColorImageGroup>> _colorImageList;
+    std::vector<std::shared_ptr<MFA::RT::ColorImageGroup>> _colorImageList;
     std::vector<std::shared_ptr<MFA::RT::DepthImageGroup>> _depthImageList;
 
 };

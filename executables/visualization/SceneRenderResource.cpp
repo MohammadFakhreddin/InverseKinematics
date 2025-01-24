@@ -12,17 +12,18 @@ SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageF
 {
     auto * device = LogicalDevice::Instance;
 
-    _msaaSampleCount = VK_SAMPLE_COUNT_1_BIT;//device->GetMaxSampleCount();
+    _msaaSampleCount = device->GetMaxSampleCount();
 
     auto const maxImageCount = LogicalDevice::Instance->GetSwapChainImageCount();
     _msaaImageList.resize(maxImageCount);
-    // _colorImageList.resize(maxImageCount);
+    _colorImageList.resize(maxImageCount);
     _depthImageList.resize(maxImageCount);
     for (int i = 0; i < maxImageCount; ++i)
     {
+        // Note: For some reason we can't have resolve image for non primary render passes
         {// MSAA Image
             RB::CreateColorImageOptions params{};
-            params.samplesCount = VK_SAMPLE_COUNT_1_BIT;
+            params.samplesCount = _msaaSampleCount;
             params.imageType = VK_IMAGE_TYPE_2D;
             params.usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
@@ -35,22 +36,22 @@ SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageF
             );
         }
 
-        // {// Color Image
-        //     RB::CreateColorImageOptions params{};
-        //     params.samplesCount = VK_SAMPLE_COUNT_1_BIT;
-        //     params.imageType = VK_IMAGE_TYPE_2D;
-        //     params.usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-        //         VK_IMAGE_USAGE_SAMPLED_BIT |
-        //         VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        //
-        //     _colorImageList[i] = RB::CreateColorImage(
-        //         device->GetPhysicalDevice(),
-        //         device->GetVkDevice(),
-        //         _imageExtent,
-        //         _imageFormat,
-        //         params
-        //     );
-        // }
+        {// Color Image
+            RB::CreateColorImageOptions params{};
+            params.samplesCount = VK_SAMPLE_COUNT_1_BIT;
+            params.imageType = VK_IMAGE_TYPE_2D;
+            params.usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+            _colorImageList[i] = RB::CreateColorImage(
+                device->GetPhysicalDevice(),
+                device->GetVkDevice(),
+                _imageExtent,
+                _imageFormat,
+                params
+            );
+        }
 
         {// Depth Image
             _depthImageList[i] = RB::CreateDepthImage(
@@ -60,7 +61,7 @@ SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageF
                 LogicalDevice::Instance->GetDepthFormat(),
                 RB::CreateDepthImageOptions{
                     .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                    .samplesCount = VK_SAMPLE_COUNT_1_BIT
+                    .samplesCount = _msaaSampleCount
                 }
             );
         }

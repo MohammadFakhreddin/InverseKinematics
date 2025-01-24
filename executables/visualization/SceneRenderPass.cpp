@@ -2,6 +2,8 @@
 
 #include "LogicalDevice.hpp"
 
+#include <array>
+
 // Use Offscreen rendering:
 // https://github.com/SaschaWillems/Vulkan/blob/master/examples/offscreen/offscreen.cpp#L348
 
@@ -28,10 +30,10 @@ void SceneRenderPass::Begin(RT::CommandRecordState const & recordState) const
 
     RB::AssignViewportAndScissorToCommandBuffer(imageExtent, recordState.commandBuffer);
 
-    std::vector<VkClearValue> clearValues(2);
+    std::vector<VkClearValue> clearValues(3);
     clearValues[0].color = VkClearColorValue{ .float32 = {0.1f, 0.1f, 0.12f, 1.0f } };
-    // clearValues[1].color = VkClearColorValue{ .float32 = {1.0f, 1.0f, 1.0f, 1.0f } };
-    clearValues[1].depthStencil = { .depth = 1.0f, .stencil = 0 };
+    clearValues[1].color = VkClearColorValue{ .float32 = {0.1f, 0.1f, 0.12f, 1.0f } };
+    clearValues[2].depthStencil = { .depth = 1.0f, .stencil = 0 };
 
     RB::BeginRenderPass(
         recordState.commandBuffer,
@@ -107,16 +109,16 @@ void SceneRenderPass::CreateRenderPass()
         .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
     };
 
-    // VkAttachmentDescription const resolveAttachment{
-    //     .format = surfaceFormat,
-    //     .samples = VK_SAMPLE_COUNT_1_BIT,
-    //     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-    //     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-    //     .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-    //     .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-    //     .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    //     .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    // };
+    VkAttachmentDescription const resolveAttachment{
+        .format = surfaceFormat,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
 
     VkAttachmentDescription const depthAttachment{
         .format = depthFormat,
@@ -136,13 +138,13 @@ void SceneRenderPass::CreateRenderPass()
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
 
-    // constexpr VkAttachmentReference imageAttachmentReference{
-    //     .attachment = 1,
-    //     .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    // };
+    constexpr VkAttachmentReference imageAttachmentReference{
+        .attachment = 1,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
 
     constexpr VkAttachmentReference depthAttachmentReference{
-        .attachment = 1,
+        .attachment = 2,
         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
 
@@ -153,12 +155,12 @@ void SceneRenderPass::CreateRenderPass()
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
             .colorAttachmentCount = 1,
             .pColorAttachments = &msaaAttachmentReference,
-            // .pResolveAttachments = &imageAttachmentReference,
+            .pResolveAttachments = &imageAttachmentReference,
             .pDepthStencilAttachment = &depthAttachmentReference,
         }
     };
 
-    std::vector<VkAttachmentDescription> attachments = { msaaAttachment/*, resolveAttachment*/, depthAttachment };
+    std::vector<VkAttachmentDescription> attachments = { msaaAttachment, resolveAttachment, depthAttachment };
 
     // Use subpass dependencies for layout transitions
     std::array<VkSubpassDependency, 2> subPassDependencies{};
@@ -208,13 +210,13 @@ void SceneRenderPass::CreateFrameBuffer()
     for (int imageIndex = 0; imageIndex < _frameBufferList.size(); imageIndex++)
     {
         auto const & msaaImage = _renderResource->MSAA_Image(imageIndex);
-        // auto const & colorImage = _renderResource->ColorImage(imageIndex);
+        auto const & colorImage = _renderResource->ColorImage(imageIndex);
         auto const & depthImage = _renderResource->DepthImage(imageIndex);
 
         std::vector<VkImageView> const attachments{
             msaaImage.imageView->imageView,
-            // colorImage->imageView->imageView,
-            depthImage->imageView->imageView
+            colorImage.imageView->imageView,
+            depthImage.imageView->imageView
         };
         // We only need one framebuffer
         _frameBufferList[imageIndex] = std::make_unique<RT::FrameBuffer>(
