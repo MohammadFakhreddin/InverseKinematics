@@ -60,7 +60,7 @@ namespace MFA
             std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
             Params params = Params {
                 .maxSets = 100,
-                .cullModeFlags = VK_CULL_MODE_BACK_BIT,
+                .cullModeFlags = VK_CULL_MODE_NONE,
                 .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                 .polygonMode = VK_POLYGON_MODE_FILL
             }

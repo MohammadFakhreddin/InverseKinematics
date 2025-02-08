@@ -5,6 +5,9 @@
 
 using namespace MFA;
 
+// TODO: Generated shapes have wrong normal
+// TODO
+
 //======================================================================================================================
 
 VisualizationApp::VisualizationApp()
@@ -75,8 +78,8 @@ VisualizationApp::VisualizationApp()
         // Shape pipeline
         _shapePipeline = std::make_shared<ShapePipeline>(
             _sceneRenderPass->GetRenderPass(),
-            lightBufferGroup,
-            cameraBufferGroup
+            cameraBufferGroup,
+            lightBufferGroup
         );
     }
 
@@ -105,9 +108,9 @@ VisualizationApp::VisualizationApp()
     }
 
     {// Camera
-        _camera = std::make_unique<MFA::ArcballCamera>(glm::vec3{}, -Math::ForwardVec3);
+        _camera = std::make_unique<MFA::ArcballCamera>([this]()->VkExtent2D{return _sceneWindowSize;},glm::vec3{}, -Math::ForwardVec3);
         _camera->SetfovDeg(40.0f);
-        _camera->SetLocalPosition(glm::vec3{0.0f, 90.0f, 0.0f});
+        _camera->SetLocalPosition(glm::vec3{0.0f, 10.0f, 0.0f});
         _camera->SetfarPlane(1000.0f);
         _camera->SetnearPlane(0.010f);
     }
@@ -167,16 +170,17 @@ void VisualizationApp::Update(float deltaTime)
     if (_camera->IsDirty())
     {
         _cameraBufferTracker->SetData(Alias{_camera->ViewProjection()});
+        // _cameraBufferTracker->SetData(Alias{glm::identity<glm::mat4>()});
     }
 
     _ui->Update();
 
-    // if (_sceneWindowResized == true)
-    // {
-    //     _device->DeviceWaitIdle();
-    //     PrepareSceneRenderPass();
-    //     _sceneWindowResized = false;
-    // }
+    if (_sceneWindowResized == true)
+    {
+        _device->DeviceWaitIdle();
+        PrepareSceneRenderPass();
+        _sceneWindowResized = false;
+    }
 }
 
 //======================================================================================================================
@@ -205,6 +209,7 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
             .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f}
         }
     };
+
     _sphereShapeRenderer->Render(recordState, (int)instances.size(), instances.data());
 
     _sceneRenderPass->End(recordState);

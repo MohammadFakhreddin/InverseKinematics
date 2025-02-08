@@ -10,20 +10,15 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	PerspectiveCamera::PerspectiveCamera()
-	{
-		_resizeListener = LogicalDevice::Instance->ResizeEventSignal1.Register([this]()
-		{
-			SetProjectionDirty();
-		});
+	PerspectiveCamera::PerspectiveCamera(GetWindowExtendCallback windowExtendCallback)
+	    : _windowExtendCallback(std::move(windowExtendCallback))
+    {
+	    SetProjectionDirty();
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
-	PerspectiveCamera::~PerspectiveCamera()
-	{
-		LogicalDevice::Instance->ResizeEventSignal1.UnRegister(_resizeListener);
-	}
+	PerspectiveCamera::~PerspectiveCamera() = default;
 
 	//-------------------------------------------------------------------------------------------------
 
@@ -57,9 +52,8 @@ namespace MFA
 	{
 		if (_isProjectionDirty == true)
 		{
-			auto const extent = LogicalDevice::Instance->GetSurfaceCapabilities().currentExtent;
-			float const aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-
+			auto const extent = _windowExtendCallback();
+			float const aspectRatio = static_cast<float>(extent.x) / static_cast<float>(extent.y);
 			Math::PerspectiveProjection(_projMat, aspectRatio, _fovDeg, _nearPlane, _farPlane);
 			_isProjectionDirty = false;
 		}

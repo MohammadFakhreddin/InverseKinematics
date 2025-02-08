@@ -11,7 +11,11 @@ namespace MFA
     {
     public:
 
-        explicit ArcballCamera(glm::vec3 target = {}, glm::vec3 up = Math::UpVec3);
+        explicit ArcballCamera(
+            GetWindowExtendCallback windowExtendCallback,
+            glm::vec3 target = {},
+            glm::vec3 up = Math::UpVec3
+        );
 
         ~ArcballCamera();
 

@@ -35,7 +35,7 @@ PSOut main(PSIn input) {
 
     float3 color = pushConsts.color.rgb;
 
-    float ambient = 0.25f;
+    float ambient = 1.0f;
 
     float dotProd = dot(normalize(-lightSource.dir), normalize(input.worldNormal));
     float3 dirLight = max(dotProd, 0.0f) * color;

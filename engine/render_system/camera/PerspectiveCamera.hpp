@@ -4,6 +4,9 @@
 #include "BedrockRotation.hpp"
 #include "Transform.hpp"
 
+#include <functional>
+#include <vulkan/vulkan.h>
+
 namespace MFA
 {
 	// TODO: Camera can use transform class
@@ -11,7 +14,9 @@ namespace MFA
 	{
 	public:
 
-		explicit PerspectiveCamera();
+	    using GetWindowExtendCallback = std::function<VkExtent2D()>;
+
+		explicit PerspectiveCamera(GetWindowExtendCallback windowExtendCallback);
 		virtual ~PerspectiveCamera();
 
 		virtual void Update(float dtSec) {}
@@ -70,6 +75,8 @@ namespace MFA
 
 		MFA_VARIABLE2(nearPlane, float, 0.01f, SetProjectionDirty, _)
 
+	    GetWindowExtendCallback _windowExtendCallback;
+
 		Transform _transform{};
 		
 		glm::mat4 _viewMat{};
@@ -79,9 +86,6 @@ namespace MFA
 		bool _isProjectionDirty = true;
 		bool _isViewDirty = true;
 		bool _isViewProjectionDirty = true;
-
-		int _resizeListener = -1;
-
 	};
 
 }

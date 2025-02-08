@@ -9,10 +9,11 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	ArcballCamera::ArcballCamera(glm::vec3 target, glm::vec3 up)
-	{
-		_target = std::move(target);
-		_up = std::move(up);
+	ArcballCamera::ArcballCamera(GetWindowExtendCallback windowExtendCallback, glm::vec3 target, glm::vec3 up)
+	    : PerspectiveCamera(std::move(windowExtendCallback))
+    {
+		_target = target;
+		_up = up;
 		LogicalDevice::Instance->SDL_EventSignal.Register([&](SDL_Event* event)->void{OnSDL_Event(event);});
 	}
 
