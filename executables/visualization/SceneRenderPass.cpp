@@ -82,9 +82,14 @@ void SceneRenderPass::End(RT::CommandRecordState const & recordState)
 
 //======================================================================================================================
 
-VkRenderPass SceneRenderPass::GetRenderPass() const
+VkRenderPass SceneRenderPass::GetRenderPass() const { return _renderPass->vkRenderPass; }
+
+//======================================================================================================================
+
+void SceneRenderPass::UpdateRenderResource(std::shared_ptr<SceneRenderResource> renderResource)
 {
-    return _renderPass->vkRenderPass;
+    _renderResource = std::move(renderResource);
+    CreateFrameBuffer();
 }
 
 //======================================================================================================================
@@ -187,8 +192,8 @@ void SceneRenderPass::CreateRenderPass()
         static_cast<uint32_t>(attachments.size()),
         subPassDescription.data(),
         static_cast<uint32_t>(subPassDescription.size()),
-        subPassDependencies.data(),
-        subPassDependencies.size()
+        0,//subPassDependencies.data(),
+        0//subPassDependencies.size()
     ));
 }
 

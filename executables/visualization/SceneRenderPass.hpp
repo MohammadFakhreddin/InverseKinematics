@@ -18,6 +18,8 @@ public:
     [[nodiscard]]
     VkRenderPass GetRenderPass() const;
 
+    void UpdateRenderResource(std::shared_ptr<SceneRenderResource> renderResource);
+
 private:
 
     void CreateRenderPass();

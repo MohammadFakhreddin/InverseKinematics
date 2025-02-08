@@ -55,6 +55,7 @@ VisualizationApp::VisualizationApp()
 
     _device->ResizeEventSignal2.Register([this]() -> void { Resize(); });
 
+    // _sceneWindowResized = true;
     PrepareSceneRenderPass();
 
     {
@@ -67,6 +68,12 @@ VisualizationApp::VisualizationApp()
             _device->GetMaxFramePerFlight()
         );
         _lightBufferTracker = std::make_shared<HostVisibleBufferTracker>(lightBufferGroup);
+        ShapePipeline::LightSource light {
+            .dir = glm::vec3(0.0f, 0.0f, -1.0f),
+            .color = {10.0f, 10.0f, 10.0f}
+        };
+        _lightBufferTracker->SetData(Alias{light});
+
         // Camera buffer
         auto cameraBufferGroup = RB::CreateHostVisibleUniformBuffer(
             _device->GetVkDevice(),
@@ -150,7 +157,7 @@ void VisualizationApp::Run()
         auto recordState = _device->AcquireRecordState(_swapChainResource->GetSwapChainImages().swapChain);
         if (recordState.isValid == true)
         {
-            _activeImageIndex = recordState.imageIndex;
+            _activeImageIndex = static_cast<int>(recordState.imageIndex);
             Render(recordState);
         }
 
@@ -166,6 +173,14 @@ void VisualizationApp::Run()
 
 void VisualizationApp::Update(float deltaTime)
 {
+    if (_sceneWindowResized == true)
+    {
+        _device->DeviceWaitIdle();
+        PrepareSceneRenderPass();
+        _sceneWindowResized = false;
+        // _device->DeviceWaitIdle();
+    }
+
     _camera->Update(deltaTime);
     if (_camera->IsDirty())
     {
@@ -175,11 +190,13 @@ void VisualizationApp::Update(float deltaTime)
 
     _ui->Update();
 
-    if (_sceneWindowResized == true)
+    for (int i = static_cast<int>(oldScenes.size()) - 1; i >= 0; i--)
     {
-        _device->DeviceWaitIdle();
-        PrepareSceneRenderPass();
-        _sceneWindowResized = false;
+        oldScenes[i].remLifeTime -= 1;
+        if (oldScenes[i].remLifeTime == 0)
+        {
+            oldScenes.erase(oldScenes.begin() + i);
+        }
     }
 }
 
@@ -229,6 +246,8 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
 
 void VisualizationApp::Resize()
 {
+    // LogicalDevice::Instance->DeviceWaitIdle();
+    // PrepareSceneRenderPass();
 }
 
 //======================================================================================================================
@@ -266,25 +285,50 @@ void VisualizationApp::OnUI(float deltaTimeSec)
 
 void VisualizationApp::PrepareSceneRenderPass()
 {
-    _sceneRenderResource = std::make_shared<SceneRenderResource>(_sceneWindowSize, LogicalDevice::Instance->GetSurfaceFormat().format);
-    _sceneRenderPass = std::make_unique<SceneRenderPass>(_sceneRenderResource);
-
     auto const maxImageCount = LogicalDevice::Instance->GetSwapChainImageCount();
+
+    if (_sceneRenderResource != nullptr || _sceneRenderPass != nullptr)
+    {
+        MFA_ASSERT(_sceneRenderResource != nullptr);
+        MFA_ASSERT(_sceneRenderPass != nullptr);
+        oldScenes.emplace_back();
+        OldScene & oldScene = oldScenes.back();
+        oldScene.sceneRenderResource = _sceneRenderResource;
+        // oldScene.sceneRenderPass = _sceneRenderPass;
+        oldScene.textureIDs = _sceneTextureID_List;
+        oldScene.remLifeTime = static_cast<int>(maxImageCount);
+        // _sceneTextureID_List.clear();
+        oldScenes.emplace_back(oldScene);
+    }
+
+    _sceneRenderResource = std::make_shared<SceneRenderResource>(
+        LogicalDevice::Instance->GetSurfaceCapabilities().currentExtent,
+        LogicalDevice::Instance->GetSurfaceFormat().format
+    );
+    if (_sceneRenderPass == nullptr)
+    {
+        _sceneRenderPass = std::make_unique<SceneRenderPass>(_sceneRenderResource);
+    }
+    else
+    {
+        _sceneRenderPass->UpdateRenderResource(_sceneRenderResource);
+    }
     _sceneTextureID_List.resize(maxImageCount);
 
     for (int imageIndex = 0; imageIndex < maxImageCount; imageIndex++)
     {
         auto & sceneTextureID = _sceneTextureID_List[imageIndex];
 
-        if (sceneTextureID == nullptr)
-        {
-            sceneTextureID = _ui->AddTexture(_sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
-        }
-        else
-        {
-            _ui->UpdateTexture(sceneTextureID, _sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
-        }
+        // if (sceneTextureID == nullptr)
+        // {
+        sceneTextureID = _ui->AddTexture(_sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
+        // }
+        // else
+        // {
+        //     _ui->UpdateTexture(sceneTextureID, _sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
+        // }
     }
+    // TODO: We have to remove the old images
 }
 
 //======================================================================================================================
@@ -362,6 +406,7 @@ void VisualizationApp::DisplaySceneWindow()
     {
         _sceneWindowSize.width = sceneWindowSize.x;
         _sceneWindowSize.height = sceneWindowSize.y;
+        _camera->SetProjectionDirty();
         _sceneWindowResized = true;
     }
     if (_activeImageIndex < _sceneTextureID_List.size())

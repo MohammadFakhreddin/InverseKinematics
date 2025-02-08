@@ -7,7 +7,7 @@ namespace MFA
     {
     public:
 
-        explicit ObserverCamera();
+        explicit ObserverCamera(GetWindowExtendCallback windowExtendCallback);
 
         ~ObserverCamera();
 

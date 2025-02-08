@@ -63,9 +63,10 @@ namespace MFA
 		[[nodiscard]]
 		bool IsDirty() const;
 
-	protected:
+	    // Must be called when a resize even happens
+	    void SetProjectionDirty();
 
-		void SetProjectionDirty();
+	protected:
 
 		void SetViewDirty();
 

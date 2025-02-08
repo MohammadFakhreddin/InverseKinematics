@@ -55,6 +55,15 @@ private:
 
     std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
     std::shared_ptr<SceneRenderResource> _sceneRenderResource{};
+
+    struct OldScene
+    {
+        std::shared_ptr<SceneRenderResource> sceneRenderResource{};
+        std::vector<ImTextureID> textureIDs{};
+        int remLifeTime{};
+    };
+    std::vector<OldScene> oldScenes{};
+
     std::vector<ImTextureID> _sceneTextureID_List{};
 
     VkExtent2D _sceneWindowSize{800, 800};

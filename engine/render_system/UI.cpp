@@ -743,7 +743,10 @@ namespace MFA
                                                      _descriptorSetLayout->descriptorSetLayout, 1);
 
         auto const imageInfo = VkDescriptorImageInfo{
-            .sampler = sampler, .imageView = imageView, .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+            .sampler = sampler,
+            .imageView = imageView,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        };
         auto writeDescriptorSet = VkWriteDescriptorSet{
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = descriptorSet.descriptorSets[0],

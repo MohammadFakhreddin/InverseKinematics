@@ -7,8 +7,8 @@ namespace MFA
 {
 	//-------------------------------------------------------------------------------------------------
 
-	ObserverCamera::ObserverCamera()
-		: PerspectiveCamera()
+	ObserverCamera::ObserverCamera(GetWindowExtendCallback windowExtendCallback)
+		: PerspectiveCamera(std::move(windowExtendCallback))
 	{
 		LogicalDevice::Instance->SDL_EventSignal.Register([&](SDL_Event* event)->void
 			{
