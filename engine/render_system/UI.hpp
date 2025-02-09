@@ -61,8 +61,7 @@ namespace MFA
 
         void UpdateTexture(ImTextureID textureID, VkSampler sampler, VkImageView imageView);
 
-	    // TODO
-	    // void RemoveTexture(ImTextureID textureID);
+	    void RemoveTexture(ImTextureID textureID);
 
 	    template<typename T>
         static void List(
@@ -192,7 +191,7 @@ namespace MFA
 
         int _myWindowID = -1;
         std::string _iniLocation = "";
-        
+
 	};
     
 }

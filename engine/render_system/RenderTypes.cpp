@@ -67,14 +67,19 @@ namespace MFA::RenderTypes
 	//-------------------------------------------------------------------------------------------------
 
 	DescriptorSetLayoutGroup::~DescriptorSetLayoutGroup()
-	{
-		RB::DestroyDescriptorSetLayout(
-			LogicalDevice::Instance->GetVkDevice(), 
-			descriptorSetLayout
-		);
-	}
+    {
+        RB::DestroyDescriptorSetLayout(LogicalDevice::Instance->GetVkDevice(), descriptorSetLayout);
+    }
 
-	//-------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------
+
+    // DescriptorSet::DescriptorSet(VkDescriptorSet descriptorSet_)
+    //     : descriptorSet(descriptorSet_)
+    // {}
+    //
+    // DescriptorSet::~DescriptorSet() = default;
+
+    //-------------------------------------------------------------------------------------------------
 
 	PipelineGroup::PipelineGroup(
 		VkPipelineLayout pipelineLayout_,

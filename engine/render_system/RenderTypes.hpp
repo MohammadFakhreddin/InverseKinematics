@@ -73,9 +73,21 @@ namespace MFA
             DescriptorSetLayoutGroup & operator= (DescriptorSetLayoutGroup && rhs) noexcept = delete;
 
             VkDescriptorSetLayout const descriptorSetLayout;
-
         };
-    
+
+	    // struct DescriptorSetGroup
+	    // {
+	    //     explicit DescriptorSet(VkDescriptorSet descriptorSet_);
+	    //     ~DescriptorSet();
+	    //
+	    //     DescriptorSet(DescriptorSet const &) noexcept = delete;
+	    //     DescriptorSet(DescriptorSet &&) noexcept = delete;
+	    //     DescriptorSet & operator= (DescriptorSet const & rhs) noexcept = delete;
+	    //     DescriptorSet & operator= (DescriptorSet && rhs) noexcept = delete;
+	    //
+	    //     VkDescriptorSet const descriptorSet;
+	    // };
+     //
         struct PipelineGroup
         {
             VkPipelineLayout const pipelineLayout;

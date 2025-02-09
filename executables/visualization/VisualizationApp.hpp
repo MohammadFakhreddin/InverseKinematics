@@ -11,7 +11,7 @@
 #include "camera/ArcballCamera.hpp"
 
 #include <SDL_events.h>
-
+// TODO: I could have just exported some mesh from GLTF and use the mesh renderer class instead. Why do I do this to myself everytime?
 class VisualizationApp
 {
 public:
@@ -53,12 +53,14 @@ private:
     std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass{};
     std::shared_ptr<MFA::RT::SamplerGroup> _sampler{};
 
-    std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
+    std::shared_ptr<SceneFrameBuffer> _sceneFrameBuffer{};
     std::shared_ptr<SceneRenderResource> _sceneRenderResource{};
+    std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
 
     struct OldScene
     {
         std::shared_ptr<SceneRenderResource> sceneRenderResource{};
+        std::shared_ptr<SceneFrameBuffer> sceneFrameBuffer{};
         std::vector<ImTextureID> textureIDs{};
         int remLifeTime{};
     };

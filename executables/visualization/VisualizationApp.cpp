@@ -6,7 +6,6 @@
 using namespace MFA;
 
 // TODO: Generated shapes have wrong normal
-// TODO
 
 //======================================================================================================================
 
@@ -55,7 +54,6 @@ VisualizationApp::VisualizationApp()
 
     _device->ResizeEventSignal2.Register([this]() -> void { Resize(); });
 
-    // _sceneWindowResized = true;
     PrepareSceneRenderPass();
 
     {
@@ -83,10 +81,13 @@ VisualizationApp::VisualizationApp()
         );
         _cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBufferGroup);
         // Shape pipeline
+        ShapePipeline::Params params{};
+        params.cullModeFlags = VK_CULL_MODE_NONE;
         _shapePipeline = std::make_shared<ShapePipeline>(
             _sceneRenderPass->GetRenderPass(),
             cameraBufferGroup,
-            lightBufferGroup
+            lightBufferGroup,
+            params
         );
     }
 
@@ -175,17 +176,15 @@ void VisualizationApp::Update(float deltaTime)
 {
     if (_sceneWindowResized == true)
     {
-        _device->DeviceWaitIdle();
         PrepareSceneRenderPass();
         _sceneWindowResized = false;
-        // _device->DeviceWaitIdle();
+        return;
     }
 
     _camera->Update(deltaTime);
     if (_camera->IsDirty())
     {
         _cameraBufferTracker->SetData(Alias{_camera->ViewProjection()});
-        // _cameraBufferTracker->SetData(Alias{glm::identity<glm::mat4>()});
     }
 
     _ui->Update();
@@ -195,6 +194,11 @@ void VisualizationApp::Update(float deltaTime)
         oldScenes[i].remLifeTime -= 1;
         if (oldScenes[i].remLifeTime == 0)
         {
+            // TODO: RenderBackend should create unique ptr for the descriptor sets
+            // for (auto const textureID : oldScenes[i].textureIDs)
+            // {
+            //     UI::Instance->RemoveTexture(textureID);
+            // }
             oldScenes.erase(oldScenes.begin() + i);
         }
     }
@@ -218,7 +222,7 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     _lightBufferTracker->Update(recordState);
     _cameraBufferTracker->Update(recordState);
 
-    _sceneRenderPass->Begin(recordState);
+    _sceneRenderPass->Begin(recordState, *_sceneFrameBuffer);
 
     std::vector<ShapePipeline::PushConstants> instances{
         ShapePipeline::PushConstants{
@@ -287,48 +291,44 @@ void VisualizationApp::PrepareSceneRenderPass()
 {
     auto const maxImageCount = LogicalDevice::Instance->GetSwapChainImageCount();
 
-    if (_sceneRenderResource != nullptr || _sceneRenderPass != nullptr)
+    if (_sceneRenderResource != nullptr || _sceneRenderPass != nullptr || _sceneFrameBuffer != nullptr)
     {
         MFA_ASSERT(_sceneRenderResource != nullptr);
         MFA_ASSERT(_sceneRenderPass != nullptr);
+        MFA_ASSERT(_sceneFrameBuffer != nullptr);
+
         oldScenes.emplace_back();
         OldScene & oldScene = oldScenes.back();
         oldScene.sceneRenderResource = _sceneRenderResource;
-        // oldScene.sceneRenderPass = _sceneRenderPass;
+        oldScene.sceneFrameBuffer = _sceneFrameBuffer;
         oldScene.textureIDs = _sceneTextureID_List;
-        oldScene.remLifeTime = static_cast<int>(maxImageCount);
-        // _sceneTextureID_List.clear();
+        oldScene.remLifeTime = static_cast<int>(maxImageCount) + 1;
         oldScenes.emplace_back(oldScene);
+        _sceneTextureID_List.clear();
     }
 
+    auto const surfaceFormat = LogicalDevice::Instance->GetSurfaceFormat().format;
+    auto const depthFormat = LogicalDevice::Instance->GetDepthFormat();
+    auto const sampleCount = LogicalDevice::Instance->GetMaxSampleCount();
+
     _sceneRenderResource = std::make_shared<SceneRenderResource>(
-        LogicalDevice::Instance->GetSurfaceCapabilities().currentExtent,
-        LogicalDevice::Instance->GetSurfaceFormat().format
+        _sceneWindowSize,
+        surfaceFormat,
+        depthFormat,
+        sampleCount
     );
     if (_sceneRenderPass == nullptr)
     {
-        _sceneRenderPass = std::make_unique<SceneRenderPass>(_sceneRenderResource);
+        _sceneRenderPass = std::make_unique<SceneRenderPass>(surfaceFormat, depthFormat, sampleCount);
     }
-    else
-    {
-        _sceneRenderPass->UpdateRenderResource(_sceneRenderResource);
-    }
+    _sceneFrameBuffer = std::make_shared<SceneFrameBuffer>(_sceneRenderResource, _sceneRenderPass->GetRenderPass());
     _sceneTextureID_List.resize(maxImageCount);
 
     for (int imageIndex = 0; imageIndex < maxImageCount; imageIndex++)
     {
         auto & sceneTextureID = _sceneTextureID_List[imageIndex];
-
-        // if (sceneTextureID == nullptr)
-        // {
         sceneTextureID = _ui->AddTexture(_sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
-        // }
-        // else
-        // {
-        //     _ui->UpdateTexture(sceneTextureID, _sampler->sampler, _sceneRenderResource->ColorImage(imageIndex).imageView->imageView);
-        // }
     }
-    // TODO: We have to remove the old images
 }
 
 //======================================================================================================================

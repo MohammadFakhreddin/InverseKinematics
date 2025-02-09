@@ -6,7 +6,12 @@ class SceneRenderResource
 {
 public:
 
-    explicit SceneRenderResource(VkExtent2D imageExtent, VkFormat imageFormat);
+    explicit SceneRenderResource(
+        VkExtent2D imageExtent,
+        VkFormat imageFormat,
+        VkFormat depthFormat,
+        VkSampleCountFlagBits msaaSampleCount
+    );
     ~SceneRenderResource();
 
     [[nodiscard]]
@@ -58,6 +63,7 @@ private:
 
     VkExtent2D const _imageExtent;
     VkFormat const _imageFormat;
+    VkFormat const _depthFormat;
     VkSampleCountFlagBits _msaaSampleCount;
 
     std::vector<std::shared_ptr<MFA::RT::ColorImageGroup>> _msaaImageList;

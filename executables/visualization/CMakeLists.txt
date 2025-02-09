@@ -11,6 +11,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/SceneRenderPass.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/SceneRenderResource.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/SceneRenderResource.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/SceneFrameBuffer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/SceneFrameBuffer.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ShapeGenerator.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ShapeGenerator.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ShapePipeline.cpp"

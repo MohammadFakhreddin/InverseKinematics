@@ -11,11 +11,16 @@ using namespace MFA;
 
 //======================================================================================================================
 // We need a renderResource per frame
-SceneRenderPass::SceneRenderPass(std::shared_ptr<SceneRenderResource> renderResource)
-    : _renderResource(std::move(renderResource))
+SceneRenderPass::SceneRenderPass(
+    VkFormat imageFormat,
+    VkFormat depthFormat,
+    VkSampleCountFlagBits sampleCount
+)
 {
+    _imageFormat = imageFormat;
+    _depthFormat = depthFormat;
+    _sampleCount = sampleCount;
     CreateRenderPass();
-    CreateFrameBuffer();
 }
 
 //======================================================================================================================
@@ -24,9 +29,9 @@ SceneRenderPass::~SceneRenderPass() = default;
 
 //======================================================================================================================
 
-void SceneRenderPass::Begin(RT::CommandRecordState const & recordState) const
+void SceneRenderPass::Begin(RT::CommandRecordState const & recordState, SceneFrameBuffer const & frameBuffer) const
 {
-    auto const & imageExtent = _renderResource->ImageExtent();
+    auto const & imageExtent = frameBuffer.ImageExtent();
 
     RB::AssignViewportAndScissorToCommandBuffer(imageExtent, recordState.commandBuffer);
 
@@ -38,7 +43,7 @@ void SceneRenderPass::Begin(RT::CommandRecordState const & recordState) const
     RB::BeginRenderPass(
         recordState.commandBuffer,
         _renderPass->vkRenderPass,
-        _frameBufferList[recordState.imageIndex]->framebuffer,
+        frameBuffer.FrameIndex(recordState.imageIndex),
         imageExtent,
         static_cast<uint32_t>(clearValues.size()),
         clearValues.data()
@@ -50,34 +55,6 @@ void SceneRenderPass::Begin(RT::CommandRecordState const & recordState) const
 void SceneRenderPass::End(RT::CommandRecordState const & recordState)
 {
     vkCmdEndRenderPass(recordState.commandBuffer);
-
-    // VkImageSubresourceRange const subResourceRange{
-    //     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-    //     .baseMipLevel = 0,
-    //     .levelCount = 1,
-    //     .baseArrayLayer = 0,
-    //     .layerCount = 1,
-    // };
-    //
-    // VkImageMemoryBarrier const pipelineBarrier{
-    //     .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-    //     .srcAccessMask = 0,
-    //     .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-    //     .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    //     .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    //     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-    //     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-    //     .image = _renderResource->ColorImage(recordState)->imageGroup->image,
-    //     .subresourceRange = subResourceRange
-    // };
-    //
-    // RB::PipelineBarrier(
-    //     recordState.commandBuffer,
-    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-    //     1,
-    //     &pipelineBarrier
-    // );
 }
 
 //======================================================================================================================
@@ -86,26 +63,14 @@ VkRenderPass SceneRenderPass::GetRenderPass() const { return _renderPass->vkRend
 
 //======================================================================================================================
 
-void SceneRenderPass::UpdateRenderResource(std::shared_ptr<SceneRenderResource> renderResource)
-{
-    _renderResource = std::move(renderResource);
-    CreateFrameBuffer();
-}
-
-//======================================================================================================================
-
 void SceneRenderPass::CreateRenderPass()
 {
     auto const * device = LogicalDevice::Instance;
 
-    auto const surfaceFormat = _renderResource->ImageFormat();
-    auto const depthFormat = LogicalDevice::Instance->GetDepthFormat();
-    auto const sampleCount = _renderResource->MSAA_SampleCount();
-
     // Multi-sampled attachment that we render to
     VkAttachmentDescription const msaaAttachment{
-        .format = surfaceFormat,
-        .samples = sampleCount,
+        .format = _imageFormat,
+        .samples = _sampleCount,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -115,7 +80,7 @@ void SceneRenderPass::CreateRenderPass()
     };
 
     VkAttachmentDescription const resolveAttachment{
-        .format = surfaceFormat,
+        .format = _imageFormat,
         .samples = VK_SAMPLE_COUNT_1_BIT,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -126,8 +91,8 @@ void SceneRenderPass::CreateRenderPass()
     };
 
     VkAttachmentDescription const depthAttachment{
-        .format = depthFormat,
-        .samples = sampleCount,
+        .format = _depthFormat,
+        .samples = _sampleCount,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -192,49 +157,9 @@ void SceneRenderPass::CreateRenderPass()
         static_cast<uint32_t>(attachments.size()),
         subPassDescription.data(),
         static_cast<uint32_t>(subPassDescription.size()),
-        0,//subPassDependencies.data(),
-        0//subPassDependencies.size()
+        subPassDependencies.data(),
+        subPassDependencies.size()
     ));
-}
-
-//======================================================================================================================
-
-void SceneRenderPass::CreateFrameBuffer()
-{
-    auto const * device = LogicalDevice::Instance;
-
-    auto const & extent = _renderResource->ImageExtent();
-
-    auto const swapChainExtent = VkExtent2D{
-        .width = extent.width,
-        .height = extent.height
-    };
-
-    _frameBufferList.resize(device->GetSwapChainImageCount());
-
-    for (int imageIndex = 0; imageIndex < _frameBufferList.size(); imageIndex++)
-    {
-        auto const & msaaImage = _renderResource->MSAA_Image(imageIndex);
-        auto const & colorImage = _renderResource->ColorImage(imageIndex);
-        auto const & depthImage = _renderResource->DepthImage(imageIndex);
-
-        std::vector<VkImageView> const attachments{
-            msaaImage.imageView->imageView,
-            colorImage.imageView->imageView,
-            depthImage.imageView->imageView
-        };
-        // We only need one framebuffer
-        _frameBufferList[imageIndex] = std::make_unique<RT::FrameBuffer>(
-            RB::CreateFrameBuffers(
-                device->GetVkDevice(),
-                _renderPass->vkRenderPass,
-                attachments.data(),
-                static_cast<uint32_t>(attachments.size()),
-                swapChainExtent,
-                1
-            )
-        );
-    }
 }
 
 //======================================================================================================================

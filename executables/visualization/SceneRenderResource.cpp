@@ -7,8 +7,16 @@ using namespace MFA;
 
 //======================================================================================================================
 
-SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageFormat) :
-    _imageExtent(imageExtent), _imageFormat(imageFormat)
+SceneRenderResource::SceneRenderResource(
+    VkExtent2D const imageExtent,
+    VkFormat const imageFormat,
+    VkFormat const depthFormat,
+    VkSampleCountFlagBits const msaaSampleCount
+)
+    :_imageExtent(imageExtent)
+    ,_imageFormat(imageFormat)
+    ,_depthFormat(depthFormat)
+    ,_msaaSampleCount(msaaSampleCount)
 {
     auto * device = LogicalDevice::Instance;
 
@@ -58,7 +66,7 @@ SceneRenderResource::SceneRenderResource(VkExtent2D imageExtent, VkFormat imageF
                 LogicalDevice::Instance->GetPhysicalDevice(),
                 LogicalDevice::Instance->GetVkDevice(),
                 _imageExtent,
-                LogicalDevice::Instance->GetDepthFormat(),
+                _depthFormat,
                 RB::CreateDepthImageOptions{
                     .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                     .samplesCount = _msaaSampleCount
