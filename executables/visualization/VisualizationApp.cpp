@@ -199,11 +199,10 @@ void VisualizationApp::Update(float deltaTime)
         oldScenes[i].remLifeTime -= 1;
         if (oldScenes[i].remLifeTime == 0)
         {
-            // TODO: RenderBackend should create unique ptr for the descriptor sets
-            // for (auto const textureID : oldScenes[i].textureIDs)
-            // {
-            //     UI::Instance->RemoveTexture(textureID);
-            // }
+            for (auto const textureID : oldScenes[i].textureIDs)
+            {
+                UI::Instance->RemoveTexture(textureID);
+            }
             oldScenes.erase(oldScenes.begin() + i);
         }
     }

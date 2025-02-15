@@ -173,7 +173,24 @@ namespace MFA
         std::shared_ptr<RT::DescriptorPool> _descriptorPool{};
         RT::DescriptorSetGroup _fontDescriptorSetGroup{};
 
-        std::vector<RT::DescriptorSetGroup> _imageDescriptorSetGroups{};
+	    struct ImageHolder
+	    {
+
+	        explicit ImageHolder(
+	            std::shared_ptr<RT::DescriptorSetLayoutGroup> descriptorSetLayout,
+                std::shared_ptr<RT::DescriptorPool> descriptorPool
+            );
+
+            ~ImageHolder();
+
+	        std::shared_ptr<RT::DescriptorSetLayoutGroup> _descriptorSetLayout{};
+	        std::shared_ptr<RT::DescriptorPool> _descriptorPool{};
+	        RT::DescriptorSetGroup descriptorSetGroup{};
+
+        };
+
+        std::unordered_map<int, std::shared_ptr<ImageHolder>> _imageDescriptorSetGroups{};
+	    int _nextImageIndex = 0;
 
         std::shared_ptr<RT::PipelineGroup> _pipeline{};
         std::shared_ptr<RT::GpuTexture> _fontTexture{};

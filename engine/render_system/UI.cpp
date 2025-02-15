@@ -666,7 +666,7 @@ namespace MFA
                                 RB::AutoBindDescriptorSet(
                                     recordState,
                                     RB::UpdateFrequency::PerPipeline,
-                                    static_cast<VkDescriptorSet>(pcmd->TextureId)
+                                    _imageDescriptorSetGroups[(int)pcmd->TextureId]->descriptorSetGroup.descriptorSets[0]
                                 );
                             }
 
@@ -743,11 +743,7 @@ namespace MFA
     {
         auto *device = LogicalDevice::Instance->GetVkDevice();
 
-        auto descriptorSet = RB::CreateDescriptorSet(
-            device, _descriptorPool->descriptorPool,
-            _descriptorSetLayout->descriptorSetLayout,
-            1
-        );
+        auto imageHolder = std::make_shared<ImageHolder>(_descriptorSetLayout, _descriptorPool);
 
         auto const imageInfo = VkDescriptorImageInfo{
             .sampler = sampler,
@@ -756,7 +752,7 @@ namespace MFA
         };
         auto writeDescriptorSet = VkWriteDescriptorSet{
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = descriptorSet.descriptorSets[0],
+            .dstSet = imageHolder->descriptorSetGroup.descriptorSets[0],
             .dstBinding = 0,
             .dstArrayElement = 0,
             .descriptorCount = 1,
@@ -765,9 +761,11 @@ namespace MFA
         };
         RB::UpdateDescriptorSets(device, 1, &writeDescriptorSet);
 
-        _imageDescriptorSetGroups.emplace_back(descriptorSet);
+        int const ID = _nextImageIndex++;
+        MFA_ASSERT(_imageDescriptorSetGroups.contains(ID) == false);
+        _imageDescriptorSetGroups[ID] = imageHolder;
 
-        return (ImTextureID)descriptorSet.descriptorSets[0];
+        return (ImTextureID)ID;
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -775,38 +773,45 @@ namespace MFA
     void UI::UpdateTexture(ImTextureID textureID, VkSampler sampler, VkImageView imageView)
     {
         auto *device = LogicalDevice::Instance->GetVkDevice();
+        int const ID = (int)textureID;
+        auto const findResult = _imageDescriptorSetGroups.find(ID);
 
-        auto const imageInfo = VkDescriptorImageInfo{
-            .sampler = sampler,
-            .imageView = imageView,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        };
+        if (findResult != _imageDescriptorSetGroups.end())
+        {
+            MFA_ASSERT(_imageDescriptorSetGroups.contains(ID));
+            auto const & imageHolder = _imageDescriptorSetGroups[ID];
 
-        auto writeDescriptorSet = VkWriteDescriptorSet{
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = (VkDescriptorSet)textureID,
-            .dstBinding = 0,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .pImageInfo = &imageInfo,
-        };
+            auto const imageInfo = VkDescriptorImageInfo{
+                .sampler = sampler,
+                .imageView = imageView,
+                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            };
 
-        RB::UpdateDescriptorSets(device, 1, &writeDescriptorSet);
+            auto writeDescriptorSet = VkWriteDescriptorSet{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = imageHolder->descriptorSetGroup.descriptorSets[0],
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .pImageInfo = &imageInfo,
+            };
+
+            RB::UpdateDescriptorSets(device, 1, &writeDescriptorSet);
+        }
+        else
+        {
+            MFA_ASSERT(false);
+        }
     }
 
     //-------------------------------------------------------------------------------------------------
 
     void UI::RemoveTexture(ImTextureID textureID)
     {
-        auto *device = LogicalDevice::Instance->GetVkDevice();
-        auto descriptorSet = (VkDescriptorSet)textureID;
-        vkFreeDescriptorSets(
-            device,
-            _descriptorPool->descriptorPool,
-            1,
-            &descriptorSet
-        );
+        int const ID = (int)textureID;
+        // MFA_ASSERT(_imageDescriptorSetGroups.contains(ID));
+        _imageDescriptorSetGroups.erase(ID);
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -1195,6 +1200,35 @@ namespace MFA
             SDL_SetCursor(_mouseCursors[imgui_cursor] ? _mouseCursors[imgui_cursor] : _mouseCursors[ImGuiMouseCursor_Arrow]);
             SDL_ShowCursor(SDL_TRUE);
         }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+
+    UI::ImageHolder::ImageHolder(
+        std::shared_ptr<RT::DescriptorSetLayoutGroup> descriptorSetLayout,
+        std::shared_ptr<RT::DescriptorPool> descriptorPool
+    )
+        : _descriptorSetLayout(std::move(descriptorSetLayout))
+        , _descriptorPool(std::move(descriptorPool))
+    {
+        auto *device = LogicalDevice::Instance->GetVkDevice();
+        descriptorSetGroup = RB::CreateDescriptorSet(
+            device,
+            _descriptorPool->descriptorPool,
+            _descriptorSetLayout->descriptorSetLayout,
+            1
+        );
+    }
+
+    UI::ImageHolder::~ImageHolder()
+    {
+        auto * device = LogicalDevice::Instance->GetVkDevice();
+        vkFreeDescriptorSets(
+            device,
+            _descriptorPool->descriptorPool,
+            descriptorSetGroup.descriptorSets.size(),
+            descriptorSetGroup.descriptorSets.data()
+        );
     }
 
     //-------------------------------------------------------------------------------------------------
