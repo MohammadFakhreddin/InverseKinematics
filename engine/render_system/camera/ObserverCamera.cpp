@@ -7,59 +7,57 @@ namespace MFA
 {
 	//-------------------------------------------------------------------------------------------------
 
-	ObserverCamera::ObserverCamera(GetWindowExtendCallback windowExtendCallback)
-		: PerspectiveCamera(std::move(windowExtendCallback))
+	ObserverCamera::ObserverCamera(WindowExtendCallback windowExtendCallback, HasFocusCallback focusCallback)
+		: PerspectiveCamera(std::move(windowExtendCallback), std::move(focusCallback))
 	{
-		LogicalDevice::Instance->SDL_EventSignal.Register([&](SDL_Event* event)->void
+		LogicalDevice::Instance->SDL_EventSignal.Register([&](SDL_Event* event)->void{
+    		if (_windowHasFocusCallback() == false)
 			{
-				if (UI::Instance != nullptr && UI::Instance->HasFocus() == true)
-				{
-					_motionButtons = {};
-					_leftMouseDown = false;
-				}
-				else if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
-				{
-					auto modifier = event->type == SDL_KEYDOWN ? 1.0f : -1.0f;
-					
-					if (event->key.keysym.sym == SDLK_w)
-					{
-						_motionButtons.z += -1.0f * modifier;
-					}
-					else if (event->key.keysym.sym == SDLK_s)
-					{
-						_motionButtons.z += +1.0f * modifier;
-					}
-					else if (event->key.keysym.sym == SDLK_d)
-					{
-						_motionButtons.x += +1.0f * modifier;
-					}
-					else if (event->key.keysym.sym == SDLK_a)
-					{
-						_motionButtons.x += -1.0f * modifier;
-					}
-					else if (event->key.keysym.sym == SDLK_q)
-					{
-						_motionButtons.y += +1.0f * modifier;
-					}
-					else if (event->key.keysym.sym == SDLK_e)
-					{
-						_motionButtons.y += -1.0f * modifier;
-					}
+				_motionButtons = {};
+				_leftMouseDown = false;
+			}
+			else if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
+			{
+				auto const modifier = event->type == SDL_KEYDOWN ? 1.0f : -1.0f;
 
-					_motionButtons.x = std::clamp(_motionButtons.x, -1.0f, 1.0f);
-					_motionButtons.y = std::clamp(_motionButtons.y, -1.0f, 1.0f);
-					_motionButtons.z = std::clamp(_motionButtons.z, -1.0f, 1.0f);
-				}
-				else if (event->type == SDL_MOUSEBUTTONDOWN || event->type == SDL_MOUSEBUTTONUP)
+				if (event->key.keysym.sym == SDLK_w)
 				{
-					auto const modifier = event->type == SDL_MOUSEBUTTONDOWN ? true : false;
-					if (event->button.button == SDL_BUTTON_LEFT)
-					{
-						_leftMouseDown = modifier;
-					}
+					_motionButtons.z += -1.0f * modifier;
+				}
+				else if (event->key.keysym.sym == SDLK_s)
+				{
+					_motionButtons.z += +1.0f * modifier;
+				}
+				else if (event->key.keysym.sym == SDLK_d)
+				{
+					_motionButtons.x += +1.0f * modifier;
+				}
+				else if (event->key.keysym.sym == SDLK_a)
+				{
+					_motionButtons.x += -1.0f * modifier;
+				}
+				else if (event->key.keysym.sym == SDLK_q)
+				{
+					_motionButtons.y += +1.0f * modifier;
+				}
+				else if (event->key.keysym.sym == SDLK_e)
+				{
+					_motionButtons.y += -1.0f * modifier;
+				}
+
+				_motionButtons.x = std::clamp(_motionButtons.x, -1.0f, 1.0f);
+				_motionButtons.y = std::clamp(_motionButtons.y, -1.0f, 1.0f);
+				_motionButtons.z = std::clamp(_motionButtons.z, -1.0f, 1.0f);
+			}
+			else if (event->type == SDL_MOUSEBUTTONDOWN || event->type == SDL_MOUSEBUTTONUP)
+			{
+				auto const modifier = event->type == SDL_MOUSEBUTTONDOWN ? true : false;
+				if (event->button.button == SDL_BUTTON_LEFT)
+				{
+					_leftMouseDown = modifier;
 				}
 			}
-		);
+		});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -77,9 +75,7 @@ namespace MFA
 			return;
 		}
 
-		auto const uiHasFocus = UI::Instance != nullptr ? UI::Instance->HasFocus() : false;
-
-		if (_leftMouseDown && uiHasFocus == false)
+		if (_leftMouseDown == true && _windowHasFocusCallback() == true)
 		{
 			SDL_ShowCursor(SDL_DISABLE);
 			if (_mouseRelX != 0.0f || _mouseRelY != 0.0f)
@@ -148,9 +144,9 @@ namespace MFA
 		_mouseX = mouseNewX;
 		_mouseY = mouseNewY;
 
-		auto const uiHasFocus = UI::Instance != nullptr ? UI::Instance->HasFocus() : false;
+		auto const windwHasFocus = _windowHasFocusCallback();
 
-		if (_leftMouseDown == true && uiHasFocus == false)
+		if (_leftMouseDown == true && windwHasFocus == false)
 		{
 			auto const surfaceCapabilities = LogicalDevice::Instance->GetSurfaceCapabilities();
 			auto const screenWidth = surfaceCapabilities.currentExtent.width;

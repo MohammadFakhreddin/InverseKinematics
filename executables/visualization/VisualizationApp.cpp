@@ -116,7 +116,12 @@ VisualizationApp::VisualizationApp()
     }
 
     {// Camera
-        _camera = std::make_unique<MFA::ArcballCamera>([this]()->VkExtent2D{return _sceneWindowSize;},glm::vec3{}, -Math::ForwardVec3);
+        _camera = std::make_unique<MFA::ArcballCamera>(
+            [this]()->VkExtent2D{return _sceneWindowSize;},
+            [this]()->bool{return _sceneWindowFocused;},
+            glm::vec3{},
+            -Math::ForwardVec3
+        );
         _camera->SetfovDeg(40.0f);
         _camera->SetLocalPosition(glm::vec3{0.0f, 10.0f, 0.0f});
         _camera->SetfarPlane(1000.0f);
@@ -400,6 +405,7 @@ void VisualizationApp::DisplaySceneWindow()
 {
     _ui->BeginWindow("Scene");
     auto sceneWindowSize = ImGui::GetWindowSize();
+    _sceneWindowFocused = ImGui::IsWindowFocused();
     sceneWindowSize.y -= 45.0f;
     sceneWindowSize.x -= 15.0f;
     if (_sceneWindowSize.width != sceneWindowSize.x || _sceneWindowSize.height != sceneWindowSize.y)

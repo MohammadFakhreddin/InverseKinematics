@@ -12,7 +12,8 @@ namespace MFA
     public:
 
         explicit ArcballCamera(
-            GetWindowExtendCallback windowExtendCallback,
+            WindowExtendCallback windowExtendCallback,
+            HasFocusCallback focusCallback,
             glm::vec3 target = {},
             glm::vec3 up = Math::UpVec3
         );

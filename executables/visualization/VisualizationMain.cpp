@@ -4,8 +4,8 @@ using namespace MFA;
 
 int main()
 {
-    LogicalDevice::InitParams params{.windowWidth = 800,
-                                     .windowHeight = 800,
+    LogicalDevice::InitParams params{.windowWidth = 1920,
+                                     .windowHeight = 1080,
                                      .resizable = true,
                                      .fullScreen = false,
                                      .applicationName = "InverseKinematics"};

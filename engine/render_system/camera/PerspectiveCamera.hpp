@@ -14,9 +14,12 @@ namespace MFA
 	{
 	public:
 
-	    using GetWindowExtendCallback = std::function<VkExtent2D()>;
+	    // Returns size of the window for the camera.
+	    using WindowExtendCallback = std::function<VkExtent2D()>;
+	    // Indicates if the window belonging to the camera is focuses or not.
+	    using HasFocusCallback = std::function<bool()>;
 
-		explicit PerspectiveCamera(GetWindowExtendCallback windowExtendCallback);
+		explicit PerspectiveCamera(WindowExtendCallback windowExtendCallback, HasFocusCallback hasFocusCallback);
 		virtual ~PerspectiveCamera();
 
 		virtual void Update(float dtSec) {}
@@ -76,7 +79,8 @@ namespace MFA
 
 		MFA_VARIABLE2(nearPlane, float, 0.01f, SetProjectionDirty, _)
 
-	    GetWindowExtendCallback _windowExtendCallback;
+	    WindowExtendCallback _windowExtendCallback;
+	    HasFocusCallback _windowHasFocusCallback;
 
 		Transform _transform{};
 		

@@ -7,7 +7,10 @@ namespace MFA
     {
     public:
 
-        explicit ObserverCamera(GetWindowExtendCallback windowExtendCallback);
+        explicit ObserverCamera(
+            WindowExtendCallback windowExtendCallback,
+            HasFocusCallback focusCallback
+        );
 
         ~ObserverCamera();
 

@@ -10,8 +10,9 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	PerspectiveCamera::PerspectiveCamera(GetWindowExtendCallback windowExtendCallback)
+	PerspectiveCamera::PerspectiveCamera(WindowExtendCallback windowExtendCallback, HasFocusCallback hasFocusCallback)
 	    : _windowExtendCallback(std::move(windowExtendCallback))
+        , _windowHasFocusCallback(std::move(hasFocusCallback))
     {
 	    SetProjectionDirty();
 	}

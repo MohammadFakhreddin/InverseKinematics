@@ -56,7 +56,6 @@ private:
     std::shared_ptr<SceneFrameBuffer> _sceneFrameBuffer{};
     std::shared_ptr<SceneRenderResource> _sceneRenderResource{};
     std::shared_ptr<SceneRenderPass> _sceneRenderPass{};
-
     struct OldScene
     {
         std::shared_ptr<SceneRenderResource> sceneRenderResource{};
@@ -65,11 +64,10 @@ private:
         int remLifeTime{};
     };
     std::vector<OldScene> oldScenes{};
-
     std::vector<ImTextureID> _sceneTextureID_List{};
-
     VkExtent2D _sceneWindowSize{800, 800};
     bool _sceneWindowResized = false;
+    bool _sceneWindowFocused = false;
 
     ImFont* _defaultFont{};
     ImFont* _boldFont{};
