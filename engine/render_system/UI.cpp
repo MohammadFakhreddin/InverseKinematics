@@ -666,7 +666,7 @@ namespace MFA
                                 RB::AutoBindDescriptorSet(
                                     recordState,
                                     RB::UpdateFrequency::PerPipeline,
-                                    _imageDescriptorSetGroups[(int)pcmd->TextureId]->descriptorSetGroup.descriptorSets[0]
+                                    _imageDescriptorSetGroups[(uintptr_t)pcmd->TextureId]->descriptorSetGroup.descriptorSets[0]
                                 );
                             }
 
@@ -773,7 +773,7 @@ namespace MFA
     void UI::UpdateTexture(ImTextureID textureID, VkSampler sampler, VkImageView imageView)
     {
         auto *device = LogicalDevice::Instance->GetVkDevice();
-        int const ID = (int)textureID;
+        auto const ID = (uintptr_t)textureID;
         auto const findResult = _imageDescriptorSetGroups.find(ID);
 
         if (findResult != _imageDescriptorSetGroups.end())
@@ -809,7 +809,7 @@ namespace MFA
 
     void UI::RemoveTexture(ImTextureID textureID)
     {
-        int const ID = (int)textureID;
+        uintptr_t const ID = (uintptr_t)textureID;
         // MFA_ASSERT(_imageDescriptorSetGroups.contains(ID));
         _imageDescriptorSetGroups.erase(ID);
     }
