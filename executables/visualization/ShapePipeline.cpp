@@ -20,7 +20,7 @@ namespace MFA
 		: _params(params)
 	{
 		mRenderPass = renderPass;
-		mViewProjBuffer = std::move(viewProjectionBuffer);
+		mViewProjectionBuffer = std::move(viewProjectionBuffer);
         mLightSourceBuffer = std::move(lightSourceBuffer);
 
 		mDescriptorPool = RB::CreateDescriptorPool(
@@ -68,16 +68,16 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	void ShapePipeline::SetPushConstants(RT::CommandRecordState& recordState, PushConstants pushConstants) const
-	{
-		RB::PushConstants(
-			recordState,
-			mPipeline->pipelineLayout,
-			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-			0,
-			Alias(pushConstants)
-		);
-	}
+	// void ShapePipeline::SetPushConstants(RT::CommandRecordState& recordState, PushConstants pushConstants) const
+	// {
+	// 	RB::PushConstants(
+	// 		recordState,
+	// 		mPipeline->pipelineLayout,
+	// 		VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+	// 		0,
+	// 		Alias(pushConstants)
+	// 	);
+	// }
 
 	//-------------------------------------------------------------------------------------------------
 
@@ -246,9 +246,9 @@ namespace MFA
 
 			// ViewProjectionTransform
 			VkDescriptorBufferInfo viewProjBufferInfo{
-				.buffer = mViewProjBuffer->buffers[frameIndex]->buffer,
+				.buffer = mViewProjectionBuffer->buffers[frameIndex]->buffer,
 				.offset = 0,
-				.range = mViewProjBuffer->bufferSize,
+				.range = mViewProjectionBuffer->bufferSize,
 			};
 			descriptorSetSchema.AddUniformBuffer(&viewProjBufferInfo);
 
@@ -265,7 +265,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	void ShapePipeline::reload()
+	void ShapePipeline::Reload()
 	{
 		MFA_LOG_DEBUG("Reloading shading pipeline");
 

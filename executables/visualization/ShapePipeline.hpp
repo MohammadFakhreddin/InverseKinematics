@@ -22,6 +22,7 @@ namespace MFA
         {
             glm::mat4 matrix{};
         };
+
         // Directional light for now
         struct LightSource
         {
@@ -31,18 +32,14 @@ namespace MFA
             float placeholder0{};
         };
 
-        struct PushConstants
+        struct Instance
         {
             glm::mat4 model;
             glm::vec4 color;
-        };
 
-        struct Material
-        {
-            glm::vec4 color {};
-            int hasBaseColorTexture {};
             int specularStrength {};
             int shininess {};
+            int placeholder1 {};
             int placeholder2 {};
         };
 
@@ -73,9 +70,9 @@ namespace MFA
 
         void BindPipeline(RT::CommandRecordState& recordState) const;
 
-        void SetPushConstants(RT::CommandRecordState& recordState, PushConstants pushConstants) const;
+        // void SetPushConstants(RT::CommandRecordState& recordState, PushConstants pushConstants) const;
 
-        void reload() override;
+        void Reload() override;
 
     private:
 
@@ -90,7 +87,7 @@ namespace MFA
     	std::shared_ptr<RT::DescriptorSetLayoutGroup> mPerPipelineDescriptorLayout{};
 
         std::shared_ptr<RT::PipelineGroup> mPipeline{};
-        std::shared_ptr<RT::BufferGroup> mViewProjBuffer{};
+        std::shared_ptr<RT::BufferGroup> mViewProjectionBuffer{};
         std::shared_ptr<RT::BufferGroup> mLightSourceBuffer{};
 
         RT::DescriptorSetGroup mPerPipelineDescriptorSetGroup{};

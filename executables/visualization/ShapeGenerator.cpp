@@ -85,7 +85,7 @@ namespace ShapeGenerator
 
         // Generate vertices and normals
         for (int stack = 0; stack <= stacks; ++stack)
-            {
+        {
             float phi = glm::pi<float>() * (float)stack / (float)stacks; // From 0 to π
             float y = cos(phi) * radius;
             float ringRadius = sin(phi) * radius;

@@ -14,9 +14,11 @@ public:
 
     explicit ShapeRenderer(
         std::shared_ptr<Pipeline> pipeline,
+
         int vertexCount,
         Vertex const * vertices,
         Normal const * normals,
+
         int indexCount,
         Index const * indices
     );

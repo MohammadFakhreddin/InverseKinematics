@@ -39,7 +39,7 @@ ShapeRenderer::ShapeRenderer(
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-
+// TODO: Try instance rendering here.
 void ShapeRenderer::Render(
     RT::CommandRecordState &recordState,
     int const instanceCount,
