@@ -21,7 +21,8 @@ namespace MFA
         [[nodiscard]]
         uint8_t * Data();
 
-        RT::BufferGroup const & HostVisibleBuffer();
+        [[nodiscard]]
+        std::shared_ptr<RT::BufferGroup> const & HostVisibleBuffer() const;
 
     private:
         
@@ -48,10 +49,10 @@ namespace MFA
         uint8_t * Data();
 
         [[nodiscard]]
-        RT::BufferGroup const & HostVisibleBuffer() const;
+        std::shared_ptr<RT::BufferGroup> const & HostVisibleBuffer() const;
 
         [[nodiscard]]
-        RT::BufferGroup const & LocalBuffer() const;
+        std::shared_ptr<RT::BufferGroup> const & LocalBuffer() const;
 
     private:
 

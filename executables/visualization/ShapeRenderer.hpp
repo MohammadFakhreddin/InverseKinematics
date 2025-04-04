@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AssetGLTF_Mesh.hpp"
+#include "BufferTracker.hpp"
 #include "ShapePipeline.hpp"
 
 class ShapeRenderer
@@ -15,19 +16,22 @@ public:
     explicit ShapeRenderer(
         std::shared_ptr<Pipeline> pipeline,
 
+        std::shared_ptr<MFA::RT::BufferGroup> viewProjectionBuffer,
+        std::shared_ptr<MFA::RT::BufferGroup> lightSourceBuffer,
+
         int vertexCount,
         Vertex const * vertices,
         Normal const * normals,
 
         int indexCount,
-        Index const * indices
+        Index const * indices,
+
+        int maxInstanceCount = 100
     );
 
-    void Render(
-        MFA::RT::CommandRecordState &recordState,
-        int instanceCount,
-        Pipeline::PushConstants const *instances
-    ) const;
+    void Queue(Pipeline::Instance const & instance);
+
+    void Render(MFA::RT::CommandRecordState & recordState);
 
 private:
 
@@ -44,14 +48,21 @@ private:
         Index const * indices
     );
 
-    // TODO: Start from here: Have a material buffer
+    std::shared_ptr<Pipeline> mPipeline{};
 
-    std::shared_ptr<Pipeline> _pipeline{};
+    MFA::RenderTypes::DescriptorSetGroup mDescriptorSetGroup{};
 
-    std::shared_ptr<MFA::RT::GpuTexture> _errorTexture{};
+    std::shared_ptr<MFA::RT::BufferGroup> mViewProjectionBuffer{};
+    std::shared_ptr<MFA::RT::BufferGroup> mLightSourceBuffer{};
 
-    int _vertexCount{};
-    int _indexCount{};
+    int mVertexCount{};
+    int mIndexCount{};
     std::shared_ptr<MFA::RT::BufferAndMemory> _vertexBuffer{};
     std::shared_ptr<MFA::RT::BufferAndMemory> _indexBuffer{};
+
+    int mMaxInstanceCount;
+    std::shared_ptr<MFA::HostVisibleBufferTracker> mInstanceBuffer{};
+    std::vector<Pipeline::Instance> mInstances{};
+
+    int mInstanceCount{};
 };

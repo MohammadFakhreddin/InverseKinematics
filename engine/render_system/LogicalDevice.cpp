@@ -24,6 +24,8 @@ namespace MFA
         if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
         {
             MFA_LOG_ERROR("Message code: %d\nMessage: %s\nLocation: %d\n", message_code, message, static_cast<int>(location));
+            MFA_ASSERT(false);
+            return true;
         }
         else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
         {
@@ -33,8 +35,7 @@ namespace MFA
         {
             MFA_LOG_INFO("Message code: %d\nMessage: %s\nLocation: %d\n", message_code, message, static_cast<int>(location));
         }
-        MFA_ASSERT(false);
-        return true;
+        return false;
     }
 
     //-------------------------------------------------------------------------------------------------

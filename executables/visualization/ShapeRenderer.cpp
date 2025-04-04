@@ -1,6 +1,7 @@
 #include "ShapeRenderer.hpp"
 
 #include <ranges>
+#include <utility>
 
 #include "LogicalDevice.hpp"
 
@@ -10,25 +11,32 @@ using namespace MFA;
 
 ShapeRenderer::ShapeRenderer(
     std::shared_ptr<Pipeline> pipeline,
+
+    std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
+    std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
+    // Vertex count
     int const vertexCount,
-    Vertex const * vertices,
-    Normal const * normals,
+    Vertex const *vertices,
+    Normal const *normals,
+    // Index count
     int const indexCount,
-    Index const * indices
-)
-    : _pipeline(std::move(pipeline))
-    , _vertexCount(vertexCount)
-    , _indexCount(indexCount)
+    Index const *indices,
+
+    int const maxInstanceCount
+) :
+    mPipeline(std::move(pipeline)),
+    mViewProjectionBuffer(std::move(viewProjectionBuffer)),
+    mLightSourceBuffer(std::move(lightSourceBuffer)),
+    mVertexCount(vertexCount),
+    mIndexCount(indexCount),
+    mMaxInstanceCount(maxInstanceCount)
 {
     const auto device = LogicalDevice::Instance;
 
-    const auto commandBuffer = RB::BeginSingleTimeCommand(
-        device->GetVkDevice(),
-        device->GetGraphicCommandPool()
-    );
+    const auto commandBuffer = RB::BeginSingleTimeCommand(device->GetVkDevice(), device->GetGraphicCommandPool());
 
-    auto vertexStageBuffer = GenerateVertexBuffer(commandBuffer, _vertexCount, vertices, normals);
-    auto indexStageBuffer = GenerateIndexBuffer(commandBuffer, _indexCount, indices);
+    auto vertexStageBuffer = GenerateVertexBuffer(commandBuffer, mVertexCount, vertices, normals);
+    auto indexStageBuffer = GenerateIndexBuffer(commandBuffer, mIndexCount, indices);
 
     RB::EndAndSubmitSingleTimeCommand(
         device->GetVkDevice(),
@@ -36,17 +44,41 @@ ShapeRenderer::ShapeRenderer(
         device->GetGraphicQueue(),
         commandBuffer
     );
+
+    mDescriptorSetGroup = mPipeline->CreatePerRenderDescriptorSets(*mViewProjectionBuffer, *mLightSourceBuffer);
+
+    {
+        auto device = LogicalDevice::Instance;
+        mInstanceBuffer = std::make_shared<HostVisibleBufferTracker>(RB::CreateBufferGroup(
+            device->GetVkDevice(),
+            device->GetPhysicalDevice(),
+            sizeof(Pipeline::Instance) * maxInstanceCount,
+            device->GetMaxFramePerFlight(),
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        ));
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-// TODO: Try instance rendering here.
-void ShapeRenderer::Render(
-    RT::CommandRecordState &recordState,
-    int const instanceCount,
-    Pipeline::PushConstants const *instances
-) const
+
+void ShapeRenderer::Queue(Pipeline::Instance const & instance)
 {
-    _pipeline->BindPipeline(recordState);
+    auto * data = mInstanceBuffer->Data();
+    data += mInstanceCount * sizeof(Pipeline::Instance);
+    memcpy(data, &instance, sizeof(Pipeline::Instance));
+    mInstanceCount += 1;
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void ShapeRenderer::Render(RT::CommandRecordState &recordState)
+{
+    mInstanceBuffer->Update(recordState);
+
+    mPipeline->BindPipeline(recordState);
+
+    RB::AutoBindDescriptorSet(recordState, RB::UpdateFrequency::PerPipeline, mDescriptorSetGroup);
 
     RB::BindIndexBuffer(
         recordState,
@@ -62,20 +94,21 @@ void ShapeRenderer::Render(
         0
     );
 
-    for (int i = 0; i < instanceCount; ++i)
-    {
-        _pipeline->SetPushConstants(
-            recordState,
-            instances[i]
-        );
+    RB::BindVertexBuffer(
+        recordState,
+        *mInstanceBuffer->HostVisibleBuffer()->buffers[recordState.frameIndex],
+        1,
+        0
+    );
 
-        RB::DrawIndexed(
-            recordState,
-            _indexCount,
-            1,
-            0
-        );
-    }
+    RB::DrawIndexed(
+        recordState,
+        mIndexCount,
+        mInstanceCount,
+        0
+    );
+
+    mInstanceCount = 0;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -89,7 +122,7 @@ std::shared_ptr<RT::BufferGroup> ShapeRenderer::GenerateVertexBuffer(
 {
     std::vector<Pipeline::Vertex> cpuVertices(vertexCount);
 
-    for (int i = 0; i < _vertexCount; ++i)
+    for (int i = 0; i < mVertexCount; ++i)
     {
         cpuVertices[i] = Pipeline::Vertex
         {
@@ -122,7 +155,7 @@ std::shared_ptr<RT::BufferGroup> ShapeRenderer::GenerateVertexBuffer(
 
 //----------------------------------------------------------------------------------------------------------------------
 
-std::shared_ptr<MFA::RT::BufferGroup> ShapeRenderer::GenerateIndexBuffer(
+std::shared_ptr<RT::BufferGroup> ShapeRenderer::GenerateIndexBuffer(
     VkCommandBuffer cb,
     int const indexCount,
     Index const * indices

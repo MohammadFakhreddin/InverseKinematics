@@ -58,12 +58,19 @@ namespace MFA
 
     //-----------------------------------------------------------------------------------------------
     
-    uint8_t * HostVisibleBufferTracker::Data()
+    uint8_t *HostVisibleBufferTracker::Data()
     {
         mDirtyCounter = mBufferGroup->buffers.size();
         return mData->Ptr();
     }
-    
+
+    //-----------------------------------------------------------------------------------------------
+
+    std::shared_ptr<RT::BufferGroup> const &HostVisibleBufferTracker::HostVisibleBuffer() const
+    {
+        return mBufferGroup;
+    }
+
     //-----------------------------------------------------------------------------------------------
     
     LocalBufferTracker::LocalBufferTracker(
@@ -116,16 +123,16 @@ namespace MFA
     
     //-----------------------------------------------------------------------------------------------
     
-    RT::BufferGroup const & LocalBufferTracker::HostVisibleBuffer() const
+    std::shared_ptr<RT::BufferGroup> const & LocalBufferTracker::HostVisibleBuffer() const
     {
-        return *mHostVisibleBuffer;
+        return mHostVisibleBuffer;
     }
 
     //-----------------------------------------------------------------------------------------------
     
-    RT::BufferGroup const & LocalBufferTracker::LocalBuffer() const
+    std::shared_ptr<RT::BufferGroup> const & LocalBufferTracker::LocalBuffer() const
     {
-        return *mLocalBuffer;
+        return mLocalBuffer;
     }
     
     //-----------------------------------------------------------------------------------------------

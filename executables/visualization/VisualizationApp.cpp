@@ -76,25 +76,22 @@ VisualizationApp::VisualizationApp()
         auto cameraBufferGroup = RB::CreateHostVisibleUniformBuffer(
             _device->GetVkDevice(),
             _device->GetPhysicalDevice(),
-            sizeof(ShapePipeline::ViewProjection),
+            sizeof(ShapePipeline::Camera),
             _device->GetMaxFramePerFlight()
         );
         _cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBufferGroup);
         // Shape pipeline
         ShapePipeline::Params params{};
         params.cullModeFlags = VK_CULL_MODE_NONE;
-        _shapePipeline = std::make_shared<ShapePipeline>(
-            _sceneRenderPass->GetRenderPass(),
-            cameraBufferGroup,
-            lightBufferGroup,
-            params
-        );
+        _shapePipeline = std::make_shared<ShapePipeline>(_sceneRenderPass->GetRenderPass(), params);
     }
 
     {// Cylinder renderer
         auto [vertices, indices, normals] = ShapeGenerator::Cylinder(0.5f, 1, 10);
         _cylinderShapeRenderer = std::make_unique<ShapeRenderer>(
             _shapePipeline,
+            _cameraBufferTracker->HostVisibleBuffer(),
+            _lightBufferTracker->HostVisibleBuffer(),
             (int)vertices.size(),
             vertices.data(),
             normals.data(),
@@ -107,6 +104,8 @@ VisualizationApp::VisualizationApp()
         auto [vertices, indices, normals] = ShapeGenerator::Sphere(0.5f, 10, 10);
         _sphereShapeRenderer = std::make_unique<ShapeRenderer>(
             _shapePipeline,
+            _cameraBufferTracker->HostVisibleBuffer(),
+            _lightBufferTracker->HostVisibleBuffer(),
             (int)vertices.size(),
             vertices.data(),
             normals.data(),
@@ -189,7 +188,12 @@ void VisualizationApp::Update(float deltaTime)
     _camera->Update(deltaTime);
     if (_camera->IsDirty())
     {
-        _cameraBufferTracker->SetData(Alias{_camera->ViewProjection()});
+        ShapePipeline::Camera cameraData
+        {
+            .viewProjection = _camera->ViewProjection(),
+            .position = _camera->GlobalPosition()
+        };
+        _cameraBufferTracker->SetData(Alias{cameraData});
     }
 
     _ui->Update();
@@ -228,14 +232,24 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
 
     _sceneRenderPass->Begin(recordState, *_sceneFrameBuffer);
 
-    std::vector<ShapePipeline::PushConstants> instances{
-        ShapePipeline::PushConstants{
-            .model = glm::identity<glm::mat4>(),
-            .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f}
-        }
+    // std::vector<ShapePipeline::PushConstants> instances{
+    //     ShapePipeline::PushConstants{
+    //         .model = glm::identity<glm::mat4>(),
+    //         .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f}
+    //     }
+    // };
+    //
+    // _sphereShapeRenderer->Render(recordState, (int)instances.size(), instances.data());
+    ShapePipeline::Instance const instance
+    {
+        .model = glm::mat4(1),
+        .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f},
+        .specularStrength = 1.0f,
+        .shininess = 32
     };
+    _sphereShapeRenderer->Queue(instance);
 
-    _sphereShapeRenderer->Render(recordState, (int)instances.size(), instances.data());
+    _sphereShapeRenderer->Render(recordState);
 
     _sceneRenderPass->End(recordState);
 

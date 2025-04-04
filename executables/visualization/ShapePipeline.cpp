@@ -13,24 +13,18 @@ namespace MFA
 
 	ShapePipeline::ShapePipeline(
 		VkRenderPass renderPass,
-		std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
-		std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
 		Params params
 	)
 		: _params(params)
 	{
 		mRenderPass = renderPass;
-		mViewProjectionBuffer = std::move(viewProjectionBuffer);
-        mLightSourceBuffer = std::move(lightSourceBuffer);
-
 		mDescriptorPool = RB::CreateDescriptorPool(
 			LogicalDevice::Instance->GetVkDevice(),
 			_params.maxSets
 		);
 
-		CreatePerPipelineDescriptorSetLayout();
+		CreatePerRenderDescriptorSetLayout();
 		CreatePipeline();
-		CreatePerPipelineDescriptorSets();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -63,7 +57,6 @@ namespace MFA
 		}
 
 		RB::BindPipeline(recordState, *mPipeline);
-		RB::AutoBindDescriptorSet(recordState, RB::UpdateFrequency::PerPipeline, mPerPipelineDescriptorSetGroup);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -81,7 +74,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	void ShapePipeline::CreatePerPipelineDescriptorSetLayout()
+	void ShapePipeline::CreatePerRenderDescriptorSetLayout()
 	{
 		std::vector<VkDescriptorSetLayoutBinding> bindings{};
 
@@ -90,7 +83,7 @@ namespace MFA
 			.binding = static_cast<uint32_t>(bindings.size()),
 			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
+			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
 		};
 		bindings.emplace_back(modelViewProjectionBinding);
 
@@ -154,14 +147,25 @@ namespace MFA
 
 		std::vector<RT::GpuShader const*> shaders{ gpuVertexShader.get(), gpuFragmentShader.get() };
 
-		VkVertexInputBindingDescription const bindingDescription{
-			.binding = 0,
-			.stride = sizeof(Vertex),
-			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-		};
+		std::vector<VkVertexInputBindingDescription> const bindingDescriptions
+	    {
+	        VkVertexInputBindingDescription
+	        {
+			    .binding = 0,
+			    .stride = sizeof(Vertex),
+			    .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+            },
+	        VkVertexInputBindingDescription
+            {
+                .binding = 1,
+                .stride = sizeof(Vertex),
+                .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE,
+            },
+	    };
 
 		std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions{};
-		// Position
+        // Vertex
+	    // Position
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 0,
@@ -175,6 +179,37 @@ namespace MFA
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(Vertex, normal),
 		});
+	    // Instance
+	    for (int i = 0; i < 4; ++i)
+	    {
+	        inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+                .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+                .binding = 1,
+                .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                .offset = (uint32_t)offsetof(Instance, model) + (uint32_t)(i * sizeof(glm::vec4))
+            });
+	    }
+	    // Color
+	    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+	        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+            .binding = 1,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+            .offset = offsetof(Instance, color)
+	    });
+        // Specular strength
+	    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+            .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+            .binding = 1,
+            .format = VK_FORMAT_R32_SFLOAT,
+            .offset = offsetof(Instance, specularStrength)
+        });
+        // Shininess
+	    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+            .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+            .binding = 1,
+            .format = VK_FORMAT_R32_SINT,
+            .offset = offsetof(Instance, shininess)
+        });
 
 		RB::CreateGraphicPipelineOptions pipelineOptions{};
 		pipelineOptions.useStaticViewportAndScissor = false;
@@ -186,11 +221,11 @@ namespace MFA
 
 		// pipeline layout
 		std::vector<VkPushConstantRange> const pushConstantRanges{
-			VkPushConstantRange {
-				.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT,
-				.offset = 0,
-				.size = sizeof(PushConstants),
-			}
+			// VkPushConstantRange {
+			// 	.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT,
+			// 	.offset = 0,
+			// 	.size = sizeof(PushConstants),
+			// }
 		};
 
 		std::vector<VkDescriptorSetLayout> descriptorSetLayouts{mPerPipelineDescriptorLayout->descriptorSetLayout};
@@ -209,8 +244,8 @@ namespace MFA
 			LogicalDevice::Instance->GetVkDevice(),
 			static_cast<uint8_t>(shaders.size()),
 			shaders.data(),
-			1,
-			&bindingDescription,
+			bindingDescriptions.size(),
+			bindingDescriptions.data(),
 			static_cast<uint8_t>(inputAttributeDescriptions.size()),
 			inputAttributeDescriptions.data(),
 			surfaceCapabilities.currentExtent,
@@ -222,10 +257,13 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	void ShapePipeline::CreatePerPipelineDescriptorSets()
-	{
+	RT::DescriptorSetGroup ShapePipeline::CreatePerRenderDescriptorSets(
+	    const RT::BufferGroup & viewProjectionBuffer,
+        const RT::BufferGroup & lightSourceBuffer
+	) const
+    {
 		auto const maxFramesPerFlight = LogicalDevice::Instance->GetMaxFramePerFlight();
-		mPerPipelineDescriptorSetGroup = RB::CreateDescriptorSet(
+		auto descriptorSetGroup = RB::CreateDescriptorSet(
 			LogicalDevice::Instance->GetVkDevice(),
 			mDescriptorPool->descriptorPool,
 			mPerPipelineDescriptorLayout->descriptorSetLayout,
@@ -235,7 +273,7 @@ namespace MFA
 		for (uint32_t frameIndex = 0; frameIndex < maxFramesPerFlight; ++frameIndex)
 		{
 
-			auto const& descriptorSet = mPerPipelineDescriptorSetGroup.descriptorSets[frameIndex];
+			auto const& descriptorSet = descriptorSetGroup.descriptorSets[frameIndex];
 			MFA_ASSERT(descriptorSet != VK_NULL_HANDLE);
 
 			DescriptorSetSchema descriptorSetSchema{ descriptorSet };
@@ -246,21 +284,23 @@ namespace MFA
 
 			// ViewProjectionTransform
 			VkDescriptorBufferInfo viewProjBufferInfo{
-				.buffer = mViewProjectionBuffer->buffers[frameIndex]->buffer,
+				.buffer = viewProjectionBuffer.buffers[frameIndex]->buffer,
 				.offset = 0,
-				.range = mViewProjectionBuffer->bufferSize,
+				.range = viewProjectionBuffer.bufferSize,
 			};
 			descriptorSetSchema.AddUniformBuffer(&viewProjBufferInfo);
 
 			// LightSourceBuffer
 			VkDescriptorBufferInfo lightSourceBufferInfo{
-				.buffer = mLightSourceBuffer->buffers[frameIndex]->buffer,
+				.buffer = lightSourceBuffer.buffers[frameIndex]->buffer,
 				.offset = 0,
-				.range = mLightSourceBuffer->bufferSize
+				.range = lightSourceBuffer.bufferSize
 			};
 			descriptorSetSchema.AddUniformBuffer(&lightSourceBufferInfo);
 			descriptorSetSchema.UpdateDescriptorSets();
 		}
+
+	    return descriptorSetGroup;
 	}
 
 	//-------------------------------------------------------------------------------------------------

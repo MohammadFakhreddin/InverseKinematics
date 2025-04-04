@@ -5,7 +5,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-
+// TODO: Use spirv-reflect to make your life easier
 namespace MFA
 {
     class ShapePipeline : public IShadingPipeline
@@ -18,9 +18,20 @@ namespace MFA
             glm::vec3 normal{};
         };
 
-        struct ViewProjection
+        struct Instance
         {
-            glm::mat4 matrix{};
+            glm::mat4 model = glm::mat4(1.0f);
+            glm::vec4 color = glm::vec4(1.0f);
+            float specularStrength = 1.0f;
+            int shininess = 32;
+        };
+
+        struct Camera
+        {
+            glm::mat4 viewProjection{};
+
+            glm::vec3 position;
+            float placeholder;
         };
 
         // Directional light for now
@@ -30,17 +41,6 @@ namespace MFA
             float ambientStrength{};
             glm::vec3 color{};
             float placeholder0{};
-        };
-
-        struct Instance
-        {
-            glm::mat4 model;
-            glm::vec4 color;
-
-            int specularStrength {};
-            int shininess {};
-            int placeholder1 {};
-            int placeholder2 {};
         };
 
         struct Params
@@ -53,8 +53,6 @@ namespace MFA
 
         explicit ShapePipeline(
             VkRenderPass renderPass,
-            std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
-            std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
             Params params = Params {
                 .maxSets = 100,
                 .cullModeFlags = VK_CULL_MODE_BACK_BIT,
@@ -70,27 +68,25 @@ namespace MFA
 
         void BindPipeline(RT::CommandRecordState& recordState) const;
 
-        // void SetPushConstants(RT::CommandRecordState& recordState, PushConstants pushConstants) const;
-
         void Reload() override;
+
+        [[nodiscard]]
+        RT::DescriptorSetGroup CreatePerRenderDescriptorSets(
+            const RT::BufferGroup & viewProjectionBuffer,
+            const RT::BufferGroup & lightSourceBuffer
+        ) const;
 
     private:
 
-        void CreatePerPipelineDescriptorSetLayout();
+        void CreatePerRenderDescriptorSetLayout();
 
         void CreatePipeline();
-
-        void CreatePerPipelineDescriptorSets();
 
         std::shared_ptr<RT::DescriptorPool> mDescriptorPool{};
 
     	std::shared_ptr<RT::DescriptorSetLayoutGroup> mPerPipelineDescriptorLayout{};
 
         std::shared_ptr<RT::PipelineGroup> mPipeline{};
-        std::shared_ptr<RT::BufferGroup> mViewProjectionBuffer{};
-        std::shared_ptr<RT::BufferGroup> mLightSourceBuffer{};
-
-        RT::DescriptorSetGroup mPerPipelineDescriptorSetGroup{};
 
         VkRenderPass mRenderPass{};
 
