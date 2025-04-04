@@ -42,7 +42,7 @@ PSOut main(PSIn input) {
     float3 color2 = dirLight + ambient * color;
     
     // Gamma correct
-    color2 = pow(color2, float3(1.0f/2.2f));
+    //color2 = pow(color2, float3(1.0f/2.2f));
 
     output.color = float4(color2, pushConsts.color.a);
 

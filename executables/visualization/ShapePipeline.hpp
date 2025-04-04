@@ -22,13 +22,13 @@ namespace MFA
         {
             glm::mat4 matrix{};
         };
-
+        // Directional light for now
         struct LightSource
         {
-            glm::vec3 dir{};
-            float placeholder0{};
+            glm::vec3 direction{};
+            float ambientStrength{};
             glm::vec3 color{};
-            float placeholder1{};
+            float placeholder0{};
         };
 
         struct PushConstants
@@ -41,8 +41,8 @@ namespace MFA
         {
             glm::vec4 color {};
             int hasBaseColorTexture {};
-            int placeholder0 {};
-            int placeholder1 {};
+            int specularStrength {};
+            int shininess {};
             int placeholder2 {};
         };
 

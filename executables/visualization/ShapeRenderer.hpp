@@ -42,6 +42,8 @@ private:
         Index const * indices
     );
 
+    // TODO: Start from here: Have a material buffer
+
     std::shared_ptr<Pipeline> _pipeline{};
 
     std::shared_ptr<MFA::RT::GpuTexture> _errorTexture{};
