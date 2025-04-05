@@ -38,11 +38,11 @@ VSOut main(VSIn input) {
 
     float4x4 model = float4x4(input.modelRow0, input.modelRow1, input.modelRow2, input.modelRow3);
 
-    float4 worldPosition = model * float4(input.position, 1.0);
+    float4 worldPosition = mul(model, float4(input.position, 1.0));
     output.worldPosition = worldPosition.xyz;
-    output.worldNormal = (model * float4(input.normal, 0.0f)).xyz;
+    output.worldNormal = mul(model, float4(input.normal, 0.0f)).xyz;
 
-    output.position = camera.viewProjection * worldPosition;
+    output.position = mul(camera.viewProjection, worldPosition);
 
     output.color = input.color;
     output.specularStrength = input.specularStrength;

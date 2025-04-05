@@ -87,7 +87,11 @@ VisualizationApp::VisualizationApp()
     }
 
     {// Cylinder renderer
-        auto [vertices, indices, normals] = ShapeGenerator::Cylinder(0.5f, 1, 10);
+        auto [
+            vertices,
+            indices,
+            normals
+        ] = ShapeGenerator::Cylinder(0.5f, 1, 10);
         _cylinderShapeRenderer = std::make_unique<ShapeRenderer>(
             _shapePipeline,
             _cameraBufferTracker->HostVisibleBuffer(),
@@ -101,7 +105,7 @@ VisualizationApp::VisualizationApp()
     }
 
     {// Sphere renderer
-        auto [vertices, indices, normals] = ShapeGenerator::Sphere(0.5f, 10, 10);
+        auto [vertices, indices, normals] = ShapeGenerator::Sphere(0.5f, 40, 40);
         _sphereShapeRenderer = std::make_unique<ShapeRenderer>(
             _shapePipeline,
             _cameraBufferTracker->HostVisibleBuffer(),

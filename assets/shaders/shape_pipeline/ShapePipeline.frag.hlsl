@@ -35,8 +35,6 @@ ConstantBuffer <LightSource> light : register(b1, space0);
 
 PSOut main(PSIn input) {
     PSOut output;
-    output.color = float4(1.0, 0.0, 0.0, 1.0);
-    return output;
 
     float ambient = light.ambientStrength * light.color;
 

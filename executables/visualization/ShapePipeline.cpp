@@ -158,7 +158,7 @@ namespace MFA
 	        VkVertexInputBindingDescription
             {
                 .binding = 1,
-                .stride = sizeof(Vertex),
+                .stride = sizeof(Instance),
                 .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE,
             },
 	    };
