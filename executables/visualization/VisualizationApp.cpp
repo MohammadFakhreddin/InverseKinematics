@@ -67,8 +67,9 @@ VisualizationApp::VisualizationApp()
         );
         _lightBufferTracker = std::make_shared<HostVisibleBufferTracker>(lightBufferGroup);
         ShapePipeline::LightSource light {
-            .direction = glm::vec3(0.0f, 0.0f, -1.0f),
-            .color = {10.0f, 10.0f, 10.0f}
+            .direction = _lightDirection,
+            .ambientStrength = _ambientStrength,
+            .color = _lightColor,
         };
         _lightBufferTracker->SetData(Alias{light});
 
@@ -247,9 +248,9 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     ShapePipeline::Instance const instance
     {
         .model = glm::mat4(1),
-        .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f},
-        .specularStrength = 1.0f,
-        .shininess = 32
+        .color = glm::vec4{0.5f, 0.0f, 0.0f, 1.0f},
+        .specularStrength = _specularLightIntensity,
+        .shininess = _shininess
     };
     _sphereShapeRenderer->Queue(instance);
 
@@ -444,12 +445,23 @@ void VisualizationApp::DisplaySceneWindow()
 void VisualizationApp::DisplayParametersWindow()
 {
     _ui->BeginWindow("Parameters");
-    ImGui::PushFont(_defaultFont);
-    ImGui::Text("This is a text");
-    ImGui::PopFont();
-    ImGui::PushFont(_boldFont);
-    ImGui::Text("This is a bold text");
-    ImGui::PopFont();
+    if (ImGui::InputFloat3("Light direction", reinterpret_cast<float *>(&_lightDirection)))
+    {
+        auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
+        light->direction = _lightDirection;
+    }
+    if (ImGui::ColorPicker4("Light color", reinterpret_cast<float *>(&_lightColor)))
+    {
+        auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
+        light->color = _lightColor;
+    }
+    if (ImGui::SliderFloat("Ambient intensity", &_ambientStrength, 0.0f, 1.0f))
+    {
+        auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
+        light->ambientStrength = _ambientStrength;
+    }
+    ImGui::SliderFloat("Specularity", &_specularLightIntensity, 0.0f, 10.0f);
+    ImGui::InputInt("_shininess", &_shininess, 1, 256);
     _ui->EndWindow();
 }
 
