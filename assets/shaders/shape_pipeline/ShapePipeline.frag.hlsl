@@ -48,7 +48,7 @@ PSOut main(PSIn input) {
     float3 diffuse = max(diffuseDot, 0.0f) * light.color;
 
     float3 viewDir = normalize(camera.position - input.worldPosition);
-    float3 reflectDir = reflect(lightDir, fragNormal);
+    float3 reflectDir = reflect(-lightDir, fragNormal);
 
     float3 specular = float3(0.0, 0.0, 0.0);
     if (diffuseDot > 0.0)

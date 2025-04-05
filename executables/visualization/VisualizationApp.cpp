@@ -69,7 +69,7 @@ VisualizationApp::VisualizationApp()
         ShapePipeline::LightSource light {
             .direction = _lightDirection,
             .ambientStrength = _ambientStrength,
-            .color = _lightColor,
+            .color = _lightColor * _lightIntensity,
         };
         _lightBufferTracker->SetData(Alias{light});
 
@@ -92,7 +92,7 @@ VisualizationApp::VisualizationApp()
             vertices,
             indices,
             normals
-        ] = ShapeGenerator::Cylinder(0.5f, 1, 10);
+        ] = ShapeGenerator::Cylinder(0.5f, 1, 100);
         _cylinderShapeRenderer = std::make_unique<ShapeRenderer>(
             _shapePipeline,
             _cameraBufferTracker->HostVisibleBuffer(),
@@ -252,9 +252,11 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         .specularStrength = _specularLightIntensity,
         .shininess = _shininess
     };
-    _sphereShapeRenderer->Queue(instance);
+    // _sphereShapeRenderer->Queue(instance);
+    _cylinderShapeRenderer->Queue(instance);
 
-    _sphereShapeRenderer->Render(recordState);
+    // _sphereShapeRenderer->Render(recordState);
+    _cylinderShapeRenderer->Render(recordState);
 
     _sceneRenderPass->End(recordState);
 
@@ -453,7 +455,7 @@ void VisualizationApp::DisplayParametersWindow()
     if (ImGui::ColorPicker4("Light color", reinterpret_cast<float *>(&_lightColor)))
     {
         auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
-        light->color = _lightColor;
+        light->color = _lightColor * _lightIntensity;
     }
     if (ImGui::SliderFloat("Ambient intensity", &_ambientStrength, 0.0f, 1.0f))
     {
