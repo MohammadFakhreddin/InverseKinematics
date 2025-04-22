@@ -57,8 +57,8 @@ PSOut main(PSIn input) {
     }
 
     {// Trinity line
-        float density = 0.25;
-        float thickness = 0.0125;
+        float density = 0.5;
+        float thickness = 0.025 * 0.75;
         float4 color = float4(0.5, 0.5, 0.5, 0.5);
         if (IsInsideGrid(input.gridPosition, density, thickness))
         {

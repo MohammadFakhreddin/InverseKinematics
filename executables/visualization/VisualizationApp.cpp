@@ -124,7 +124,10 @@ VisualizationApp::VisualizationApp()
 
     {// Camera
         _camera = std::make_unique<MFA::ArcballCamera>(
-            [this]()->VkExtent2D{return _sceneWindowSize;},
+            [this]()->VkExtent2D
+            {
+                return _sceneWindowSize;
+            },
             [this]()->bool{return _sceneWindowFocused;},
             glm::vec3{},
             -Math::ForwardVec3
@@ -183,8 +186,6 @@ void VisualizationApp::Run()
 }
 
 //======================================================================================================================
-// TODO: This is a quick fix. I need to properly investigate this.
-int frameZeroCounter = 3;
 void VisualizationApp::Update(float deltaTime)
 {
     if (_sceneWindowResized == true)
@@ -195,9 +196,9 @@ void VisualizationApp::Update(float deltaTime)
     }
 
     _camera->Update(deltaTime);
-    if (_camera->IsDirty() || frameZeroCounter > 0)
+    // TODO: Something is wrong. I have to update the matrices otherwise it wont work correctly!
+    // if (_camera->IsDirty()))
     {
-        frameZeroCounter -= 1;
         ShapePipeline::Camera cameraData
         {
             .viewProjection = _camera->ViewProjection(),
@@ -481,7 +482,7 @@ void VisualizationApp::DisplayParametersWindow()
         light->ambientStrength = _ambientStrength;
     }
     ImGui::SliderFloat("Specularity", &_specularLightIntensity, 0.0f, 10.0f);
-    ImGui::InputInt("_shininess", &_shininess, 1, 256);
+    ImGui::InputInt("Shininess", &_shininess, 1, 256);
     _ui->EndWindow();
 }
 

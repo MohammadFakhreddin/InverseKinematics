@@ -54,7 +54,7 @@ namespace MFA
 		if (_isProjectionDirty == true)
 		{
 			auto const extent = _windowExtendCallback();
-			float const aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+		    float const aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 			Math::PerspectiveProjection(_projMat, aspectRatio, _fovDeg, _nearPlane, _farPlane);
 			_isProjectionDirty = false;
 		}
