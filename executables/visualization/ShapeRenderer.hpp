@@ -8,7 +8,7 @@ class ShapeRenderer
 {
 public:
 
-    using Pipeline = MFA::ShapePipeline;
+    using Pipeline = ShapePipeline;
     using Vertex = glm::vec3;
     using Normal = glm::vec3;
     using Index = uint32_t;

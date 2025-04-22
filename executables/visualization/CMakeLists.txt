@@ -19,6 +19,10 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/ShapePipeline.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ShapeRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ShapeRenderer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GridPipeline.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GridPipeline.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GridRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GridRenderer.hpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

@@ -11,8 +11,13 @@ namespace ShapeGenerator
     using Normals = std::vector<glm::vec3>;
     using Mesh = std::tuple<Vertices, Indices, Normals>;
 
+    [[nodiscard]]
     Mesh Cylinder(float radius, float height, int segments);
 
+    [[nodiscard]]
     Mesh Sphere(float radius, int slices, int stacks);
+
+    [[nodiscard]]
+    Mesh Quad();
 
 };

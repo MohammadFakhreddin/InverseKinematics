@@ -90,7 +90,8 @@ namespace ShapeGenerator
             float y = cos(phi) * radius;
             float ringRadius = sin(phi) * radius;
 
-            for (int slice = 0; slice <= slices; ++slice) {
+            for (int slice = 0; slice <= slices; ++slice)
+            {
                 float theta = 2.0f * glm::pi<float>() * (float)slice / (float)slices; // From 0 to 2π
                 float x = ringRadius * cos(theta);
                 float z = ringRadius * sin(theta);
@@ -104,8 +105,10 @@ namespace ShapeGenerator
         }
 
         // Generate indices
-        for (int stack = 0; stack < stacks; ++stack) {
-            for (int slice = 0; slice < slices; ++slice) {
+        for (int stack = 0; stack < stacks; ++stack)
+        {
+            for (int slice = 0; slice < slices; ++slice)
+            {
                 int current = stack * (slices + 1) + slice;
                 int next = current + slices + 1;
 
@@ -120,6 +123,34 @@ namespace ShapeGenerator
                 indices.emplace_back(next + 1);
             }
         }
+
+        return std::make_tuple(vertices, indices, normals);
+    }
+
+    //======================================================================================================================
+
+    Mesh Quad()
+    {
+        Vertices vertices{};
+        Indices indices{};
+        Normals normals{};
+
+        vertices.emplace_back(-1.0f, -1.0f, 0.0f);
+        vertices.emplace_back(+1.0f, -1.0f, 0.0f);
+        vertices.emplace_back(-1.0f, +1.0f, 0.0f);
+        vertices.emplace_back(+1.0f, +1.0f, 0.0f);
+
+        indices.emplace_back(0);
+        indices.emplace_back(1);
+        indices.emplace_back(2);
+        indices.emplace_back(2);
+        indices.emplace_back(1);
+        indices.emplace_back(3);
+
+        normals.emplace_back(0.0f, 0.0f, -1.0f);
+        normals.emplace_back(0.0f, 0.0f, -1.0f);
+        normals.emplace_back(0.0f, 0.0f, -1.0f);
+        normals.emplace_back(0.0f, 0.0f, -1.0f);
 
         return std::make_tuple(vertices, indices, normals);
     }

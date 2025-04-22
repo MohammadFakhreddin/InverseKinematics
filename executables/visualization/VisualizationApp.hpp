@@ -5,6 +5,7 @@
 #include "RenderTypes.hpp"
 #include "SceneRenderPass.hpp"
 #include "ShapePipeline.hpp"
+#include "GridRenderer.hpp"
 #include "ShapeRenderer.hpp"
 #include "Time.hpp"
 #include "UI.hpp"
@@ -29,6 +30,8 @@ private:
     void Render(MFA::RT::CommandRecordState & recordState);
 
     void Resize();
+
+    void Reload();
 
     void OnSDL_Event(SDL_Event* event);
 
@@ -74,9 +77,13 @@ private:
 
     std::shared_ptr<MFA::HostVisibleBufferTracker> _lightBufferTracker{};
     std::shared_ptr<MFA::HostVisibleBufferTracker> _cameraBufferTracker{};
-    std::shared_ptr<MFA::ShapePipeline> _shapePipeline{};
+
+    std::shared_ptr<ShapePipeline> _shapePipeline{};
     std::unique_ptr<ShapeRenderer> _cylinderShapeRenderer{};
     std::unique_ptr<ShapeRenderer> _sphereShapeRenderer{};
+
+    std::shared_ptr<GridPipeline> _gridPipeline{};
+    std::unique_ptr<GridRenderer> _gridRenderer{};
 
     std::unique_ptr<MFA::ArcballCamera> _camera{};
 

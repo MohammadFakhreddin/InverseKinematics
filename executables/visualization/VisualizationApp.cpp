@@ -5,8 +5,6 @@
 
 using namespace MFA;
 
-// TODO: Generated shapes have wrong normal
-
 //======================================================================================================================
 
 VisualizationApp::VisualizationApp()
@@ -117,6 +115,11 @@ VisualizationApp::VisualizationApp()
             (int)indices.size(),
             indices.data()
         );
+    }
+
+    {// Grid renderer
+        _gridPipeline = std::make_shared<GridPipeline>(_sceneRenderPass->GetRenderPass());
+        _gridRenderer = std::make_unique<GridRenderer>(_gridPipeline);
     }
 
     {// Camera
@@ -237,6 +240,15 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
 
     _sceneRenderPass->Begin(recordState, *_sceneFrameBuffer);
 
+    // TODO: Connect to UI
+    _gridRenderer->Draw(
+        recordState,
+        GridPipeline::PushConstants {
+            .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f},
+            .thickness = 1.0f
+        }
+    );
+
     // std::vector<ShapePipeline::PushConstants> instances{
     //     ShapePipeline::PushConstants{
     //         .model = glm::identity<glm::mat4>(),
@@ -281,15 +293,31 @@ void VisualizationApp::Resize()
 
 //======================================================================================================================
 
+void VisualizationApp::Reload()
+{
+    auto const * device = LogicalDevice::Instance;
+    RB::DeviceWaitIdle(device->GetVkDevice());
+
+    _shapePipeline->Reload();
+    _gridPipeline->Reload();
+}
+
+//======================================================================================================================
+
 void VisualizationApp::OnSDL_Event(SDL_Event *event)
 {
-    if (UI::Instance != nullptr && UI::Instance->HasFocus() == true)
+    // if (UI::Instance != nullptr && UI::Instance->HasFocus() == true)
+    // {
+    //     return;
+    // }
+
+    // Keyboard
+    if (event->type == SDL_KEYDOWN)
     {
-        return;
-    }
-
-    {// Keyboard
-
+        if (event->key.keysym.sym == SDLK_F5)
+        {
+            Reload();
+        }
     }
 
     {// Joystick
