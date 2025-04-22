@@ -1,41 +1,71 @@
 struct PSIn
 {
-    float3 windowPosition : POSITION0;
+    float2 gridPosition : POSITION0;
 };
 
 struct PSOut
 {
     float4 color : SV_Target0;
 };
-// TODO: Pass density and camera transform here
+
 struct PushConsts
 {
-    float3 color;
-    float thickness;
+    float4x4 viewProjMat;
 };
 [[vk::push_constant]]
 cbuffer {
     PushConsts pushConsts;
 };
 
+bool IsInsideGrid(float2 gridPos, float density, float thickness)
+{
+    float xMod = abs(fmod(gridPos.x, density));
+    float yMod = abs(fmod(gridPos.y, density));
+    if (
+        (xMod < thickness || xMod > density - thickness) ||
+        (yMod < thickness || yMod > density - thickness)
+    )
+    {
+        return true;
+    }
+    return false;
+}
+
 PSOut main(PSIn input) {
     PSOut output;
 
-    float3 position = (input.windowPosition) * 0.5 + 0.5;
-    position *= 10.0f;// TODO: Expose a value for density
-    float xMod = fmod(position.x, 1.0);
-    float yMod = fmod(position.y, 1.0);
-    if (
-        (xMod < pushConsts.thickness || xMod > 1.0 - pushConsts.thickness) ||
-        (yMod < pushConsts.thickness || yMod > 1.0 - pushConsts.thickness)
-    )
-    {
-        output.color = float4(pushConsts.color, 1.0);
-    }
-    else
-    {
-        discard;
+    {// Primary line
+        float density = 10.0;
+        float thickness = 0.05;
+        float4 color = float4(0.5, 0.0, 0.0, 0.9);
+        if (IsInsideGrid(input.gridPosition, density, thickness))
+        {
+            output.color = color;
+            return output;
+        }
     }
 
-    return output;
+    {// Secondary line
+        float density = 2.5;
+        float thickness = 0.025;
+        float4 color = float4(0.0, 0.5, 0.5, 0.75);
+        if (IsInsideGrid(input.gridPosition, density, thickness))
+        {
+            output.color = color;
+            return output;
+        }
+    }
+
+    {// Trinity line
+        float density = 0.25;
+        float thickness = 0.0125;
+        float4 color = float4(0.5, 0.5, 0.5, 0.5);
+        if (IsInsideGrid(input.gridPosition, density, thickness))
+        {
+            output.color = color;
+            return output;
+        }
+    }
+
+    discard;
 }

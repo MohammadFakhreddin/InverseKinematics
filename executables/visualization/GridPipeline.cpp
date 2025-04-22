@@ -57,7 +57,7 @@ void GridPipeline::SetPushConstant(
     RB::PushConstants(
         recordState,
         mPipeline->pipelineLayout,
-        VK_SHADER_STAGE_FRAGMENT_BIT,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         Alias{pushConstant}
     );
@@ -145,7 +145,7 @@ void GridPipeline::CreatePipeline()
 	// pipeline layout
 	std::vector<VkPushConstantRange> const pushConstantRanges{
 		VkPushConstantRange {
-			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
 			.offset = 0,
 			.size = sizeof(PushConstants),
 		}

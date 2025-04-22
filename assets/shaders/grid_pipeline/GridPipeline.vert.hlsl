@@ -6,14 +6,24 @@ struct VSIn
 struct VSOut
 {
     float4 position : SV_POSITION;
-    float3 windowPosition : POSITION0;
+    float2 gridPosition : POSITION0;
+};
+
+struct PushConsts
+{
+    float4x4 viewProjMat;
+};
+[[vk::push_constant]]
+cbuffer {
+    PushConsts pushConsts;
 };
 
 VSOut main(VSIn input) {
     VSOut output;
 
-    output.position = float4(input.position.x, input.position.y, 1.0 - 1e-5, 1.0);
-	output.windowPosition = input.position;
+    float3 scaledInput = input.position * 100;
+    output.position = mul(pushConsts.viewProjMat, float4(scaledInput, 1.0));
+    output.gridPosition = scaledInput.xy;
 
     return output;
 }

@@ -20,8 +20,7 @@ public:
 
     struct PushConstants
     {
-        Color color{};
-        Thickness thickness{};
+        glm::mat4 viewProjMat{};
     };
 
     explicit GridPipeline(VkRenderPass renderPass);

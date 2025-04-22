@@ -243,10 +243,7 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     // TODO: Connect to UI
     _gridRenderer->Draw(
         recordState,
-        GridPipeline::PushConstants {
-            .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f},
-            .thickness = 0.01f
-        }
+        GridPipeline::PushConstants {.viewProjMat = _camera->ViewProjection()}
     );
 
     ShapePipeline::Instance const instance
