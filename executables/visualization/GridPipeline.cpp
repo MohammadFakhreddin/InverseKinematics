@@ -97,13 +97,13 @@ void GridPipeline::CreatePipeline()
 	{
 		bool success = Importer::CompileShaderToSPV(
 			Path::Instance()->Get("shaders/grid_pipeline/GridPipeline.frag.hlsl"),
-			Path::Instance()->Get("shaders/grid_pipeline/GridPipeline.frag.spv"),
+			Path::Instance()->Get("shaders/grid_pipeline/GridPipeline.frag.hlsl.spv"),
 			"frag"
 		);
 		MFA_ASSERT(success == true);
 	}
 	auto cpuFragmentShader = Importer::ShaderFromSPV(
-		Path::Instance()->Get("shaders/grid_pipeline/GridPipeline.frag.spv"),
+		Path::Instance()->Get("shaders/grid_pipeline/GridPipeline.frag.hlsl.spv"),
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		"main"
 	);

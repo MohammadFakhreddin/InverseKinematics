@@ -245,18 +245,10 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         recordState,
         GridPipeline::PushConstants {
             .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f},
-            .thickness = 1.0f
+            .thickness = 0.01f
         }
     );
 
-    // std::vector<ShapePipeline::PushConstants> instances{
-    //     ShapePipeline::PushConstants{
-    //         .model = glm::identity<glm::mat4>(),
-    //         .color = glm::vec4{1.0f, 0.0f, 0.0f, 1.0f}
-    //     }
-    // };
-    //
-    // _sphereShapeRenderer->Render(recordState, (int)instances.size(), instances.data());
     ShapePipeline::Instance const instance
     {
         .model = glm::mat4(1),
@@ -264,10 +256,9 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         .specularStrength = _specularLightIntensity,
         .shininess = _shininess
     };
-    // _sphereShapeRenderer->Queue(instance);
+
     _cylinderShapeRenderer->Queue(instance);
 
-    // _sphereShapeRenderer->Render(recordState);
     _cylinderShapeRenderer->Render(recordState);
 
     _sceneRenderPass->End(recordState);
