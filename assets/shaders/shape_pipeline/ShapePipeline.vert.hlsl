@@ -38,9 +38,10 @@ VSOut main(VSIn input) {
 
     float4x4 model = float4x4(input.modelRow0, input.modelRow1, input.modelRow2, input.modelRow3);
 
-    float4 worldPosition = mul(model, float4(input.position, 1.0));
+    // This multiply here is delibrate
+    float4 worldPosition = model * float4(input.position, 1.0);
     output.worldPosition = worldPosition.xyz;
-    output.worldNormal = mul(model, float4(input.normal, 0.0f)).xyz;
+    output.worldNormal = (model * float4(input.normal, 0.0f)).xyz;
 
     output.position = mul(camera.viewProjection, worldPosition);
 

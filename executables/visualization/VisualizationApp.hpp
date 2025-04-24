@@ -95,4 +95,11 @@ private:
     float _specularLightIntensity = 1.0f;
     int _shininess = 32;
     float _ambientStrength = 0.25f;
+
+    struct Joint
+    {
+        float length = 1.0f;
+        glm::vec2 angle;
+    };
+    std::vector<Joint> _hierarchy{};
 };

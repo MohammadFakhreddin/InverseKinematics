@@ -249,15 +249,23 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         GridPipeline::PushConstants {.viewProjMat = _camera->ViewProjection()}
     );
 
-    ShapePipeline::Instance const instance
+    auto endPoint = glm::mat4(1.0f);
+    for (int i = 0; i < _hierarchy.size(); i++)
     {
-        .model = glm::mat4(1),
-        .color = glm::vec4{0.5f, 0.0f, 0.0f, 1.0f},
-        .specularStrength = _specularLightIntensity,
-        .shininess = _shininess
-    };
+        // TODO: Temporary code for now
+        // auto endPoint = glm::translate(glm::mat4(1), endPoint);
+        // endPoint += glm::vec3{_hierarchy[i].length, 0.0f, 0.0f};
 
-    _cylinderShapeRenderer->Queue(instance);
+        ShapePipeline::Instance const instance
+        {
+            .model = endPoint,
+            .color = glm::vec4{0.5f, 0.0f, 0.0f, 1.0f},
+            .specularStrength = _specularLightIntensity,
+            .shininess = _shininess
+        };
+        endPoint = glm::translate(glm::mat4(1), glm::vec3{_hierarchy[i].length, 0.0f, 0.0f}) * endPoint;
+        _cylinderShapeRenderer->Queue(instance);
+    }
 
     _cylinderShapeRenderer->Render(recordState);
 
@@ -466,6 +474,9 @@ void VisualizationApp::DisplaySceneWindow()
 void VisualizationApp::DisplayParametersWindow()
 {
     _ui->BeginWindow("Parameters");
+
+    ImGui::SeparatorText("Lighting");
+
     if (ImGui::InputFloat3("Light direction", reinterpret_cast<float *>(&_lightDirection)))
     {
         auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
@@ -483,6 +494,31 @@ void VisualizationApp::DisplayParametersWindow()
     }
     ImGui::SliderFloat("Specularity", &_specularLightIntensity, 0.0f, 10.0f);
     ImGui::InputInt("Shininess", &_shininess, 1, 256);
+
+    ImGui::SeparatorText("Hierarchy");
+
+    for (int i = 0; i < _hierarchy.size(); i++)
+    {
+        char name[32];
+        sprintf(name, "Joint %d", i);
+        if (ImGui::TreeNode(name))
+        {
+            auto & joint = _hierarchy[i];
+            ImGui::InputFloat("Length", &joint.length);
+            ImGui::InputFloat2("Angle", reinterpret_cast<float *>(&joint.angle));
+            ImGui::TreePop();
+        }
+    }
+    if (ImGui::Button("+"))
+    {
+        _hierarchy.emplace_back();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("-"))
+    {
+        _hierarchy.pop_back();
+    }
+
     _ui->EndWindow();
 }
 
