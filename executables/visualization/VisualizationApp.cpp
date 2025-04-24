@@ -444,7 +444,7 @@ void VisualizationApp::DisplaySceneWindow()
 {
     _ui->BeginWindow("Scene");
     auto sceneWindowSize = ImGui::GetWindowSize();
-    _sceneWindowFocused = ImGui::IsWindowFocused();
+    _sceneWindowFocused = ImGui::IsWindowFocused() && ImGui::IsWindowDocked();
     sceneWindowSize.y -= 45.0f;
     sceneWindowSize.x -= 15.0f;
     if (_sceneWindowSize.width != sceneWindowSize.x || _sceneWindowSize.height != sceneWindowSize.y)
