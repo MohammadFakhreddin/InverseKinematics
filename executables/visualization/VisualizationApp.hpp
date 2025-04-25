@@ -89,7 +89,7 @@ private:
 
     int _activeImageIndex{};
 
-    glm::vec3 _lightDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 _lightDirection = glm::vec3(-1.0f, 0.0f, -1.0f);
     glm::vec3 _lightColor {1.0f, 1.0f, 1.0f};
     float _lightIntensity = 1.0f;
     float _specularLightIntensity = 1.0f;

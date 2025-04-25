@@ -3,6 +3,8 @@
 #include "ShapeGenerator.hpp"
 #include "camera/ArcballCamera.hpp"
 
+#include <glm/glm.hpp>
+
 using namespace MFA;
 
 //======================================================================================================================
@@ -249,21 +251,36 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         GridPipeline::PushConstants {.viewProjMat = _camera->ViewProjection()}
     );
 
-    auto endPoint = glm::mat4(1.0f);
-    for (int i = 0; i < _hierarchy.size(); i++)
+    glm::vec3 endPoint {};
+    glm::mat4 matrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), Math::RightVec3);
+    for (auto const & arm : _hierarchy)
     {
-        // TODO: Temporary code for now
-        // auto endPoint = glm::translate(glm::mat4(1), endPoint);
-        // endPoint += glm::vec3{_hierarchy[i].length, 0.0f, 0.0f};
+        glm::vec3 startPoint = endPoint;
+
+        auto const rotateX = glm::rotate(glm::mat4(1), glm::radians(arm.angle.x), Math::RightVec3);
+        auto const rotateZ = glm::rotate(glm::mat4(1), glm::radians(arm.angle.y), Math::ForwardVec3);
+        auto const translate = glm::translate(glm::mat4(1), Math::UpVec3 * arm.length);
+        matrix *= rotateX * rotateZ * translate;
+
+        endPoint = matrix * glm::vec4{0.0, 0.0, 0.0, 1.0};
+
+        auto const middlePoint = (startPoint + endPoint) * 0.5f;
+        auto const vector = endPoint - startPoint;
+        auto const length = glm::length(vector);
+        // auto const direction = vector / length;
+
+        glm::mat4 model = glm::translate(glm::mat4(1), middlePoint) *
+            glm::lookAt(startPoint, endPoint, Math::RightVec3) *
+            glm::scale(glm::mat4(1), glm::vec3{length, 1, 1});
 
         ShapePipeline::Instance const instance
         {
-            .model = endPoint,
+            .model = model,
             .color = glm::vec4{0.5f, 0.0f, 0.0f, 1.0f},
             .specularStrength = _specularLightIntensity,
             .shininess = _shininess
         };
-        endPoint = glm::translate(glm::mat4(1), glm::vec3{_hierarchy[i].length, 0.0f, 0.0f}) * endPoint;
+        // endPoint = glm::translate(glm::mat4(1), glm::vec3{_hierarchy[i].length, 0.0f, 0.0f}) * endPoint;
         _cylinderShapeRenderer->Queue(instance);
     }
 
@@ -480,7 +497,11 @@ void VisualizationApp::DisplayParametersWindow()
     if (ImGui::InputFloat3("Light direction", reinterpret_cast<float *>(&_lightDirection)))
     {
         auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
-        light->direction = _lightDirection;
+        auto const magnitude2 = glm::length2(_lightDirection);
+        if (magnitude2 > 0.0f)
+        {
+            light->direction = _lightDirection / std::sqrt(magnitude2);
+        }
     }
     if (ImGui::ColorPicker4("Light color", reinterpret_cast<float *>(&_lightColor)))
     {
@@ -504,17 +525,22 @@ void VisualizationApp::DisplayParametersWindow()
         if (ImGui::TreeNode(name))
         {
             auto & joint = _hierarchy[i];
-            ImGui::InputFloat("Length", &joint.length);
-            ImGui::InputFloat2("Angle", reinterpret_cast<float *>(&joint.angle));
+            ImGui::SliderFloat("Length", &joint.length, 0.0, 5.0f);
+            ImGui::SliderFloat2("Angle", reinterpret_cast<float *>(&joint.angle), -180.0f, 180.0f);
             ImGui::TreePop();
         }
     }
-    if (ImGui::Button("+"))
+
+    ImVec2 buttonSize = ImVec2(60, 0);  // width 120, height auto
+    float windowWidth = ImGui::GetWindowSize().x;
+    float buttonX = (windowWidth - buttonSize.x * 2) * 0.5f;
+    ImGui::SetCursorPosX(buttonX);
+    if (ImGui::Button("+", buttonSize))
     {
         _hierarchy.emplace_back();
     }
     ImGui::SameLine();
-    if (ImGui::Button("-"))
+    if (ImGui::Button("-", buttonSize))
     {
         _hierarchy.pop_back();
     }
