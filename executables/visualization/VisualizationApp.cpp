@@ -267,11 +267,14 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         auto const middlePoint = (startPoint + endPoint) * 0.5f;
         auto const vector = endPoint - startPoint;
         auto const length = glm::length(vector);
-        // auto const direction = vector / length;
+        auto const normal = vector / length;
+        auto const biTangent0 = Math::RightVec3;
+        auto const tangent = glm::normalize(glm::cross(biTangent0, normal));
+        auto const biTangent1 = glm::normalize(glm::cross(normal, tangent));
 
         glm::mat4 model = glm::translate(glm::mat4(1), middlePoint) *
-            glm::lookAt(startPoint, endPoint, Math::RightVec3) *
-            glm::scale(glm::mat4(1), glm::vec3{length, 1, 1});
+            Math::ChangeOfBasis(biTangent1, normal, tangent) *
+            glm::scale(glm::mat4(1), glm::vec3{1, length, 1});
 
         ShapePipeline::Instance const instance
         {
@@ -280,7 +283,6 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
             .specularStrength = _specularLightIntensity,
             .shininess = _shininess
         };
-        // endPoint = glm::translate(glm::mat4(1), glm::vec3{_hierarchy[i].length, 0.0f, 0.0f}) * endPoint;
         _cylinderShapeRenderer->Queue(instance);
     }
 
