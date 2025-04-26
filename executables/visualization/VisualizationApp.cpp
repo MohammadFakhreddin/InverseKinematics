@@ -135,9 +135,10 @@ VisualizationApp::VisualizationApp()
             -Math::ForwardVec3
         );
         _camera->SetfovDeg(40.0f);
-        _camera->SetLocalPosition(glm::vec3{10.0f, 10.0f, 10.0f});
+        _camera->SetLocalPosition(glm::vec3{20.0f, 20.0f, 20.0f});
         _camera->SetfarPlane(1000.0f);
         _camera->SetnearPlane(0.010f);
+        _camera->SetmaxDistance(100.0f);
     }
 }
 
@@ -251,16 +252,26 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         GridPipeline::PushConstants {.viewProjMat = _camera->ViewProjection()}
     );
 
+
+    int colorIdx = 0;
+    static std::array<glm::vec4, 3> colors
+    {
+        glm::vec4{0.5f, 0.0f, 0.0f, 1.0f},
+        glm::vec4{0.0f, 0.5f, 0.0f, 1.0f},
+        glm::vec4{0.0f, 0.0f, 0.5f, 1.0f},
+    };
+
     glm::vec3 endPoint {};
     glm::mat4 matrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), Math::RightVec3);
+
     for (auto const & arm : _hierarchy)
     {
         glm::vec3 startPoint = endPoint;
 
         auto const rotateX = glm::rotate(glm::mat4(1), glm::radians(arm.angle.x), Math::RightVec3);
-        auto const rotateZ = glm::rotate(glm::mat4(1), glm::radians(arm.angle.y), Math::ForwardVec3);
+        auto const rotateY = glm::rotate(glm::mat4(1), glm::radians(arm.angle.y), Math::UpVec3);
         auto const translate = glm::translate(glm::mat4(1), Math::UpVec3 * arm.length);
-        matrix *= rotateX * rotateZ * translate;
+        matrix *= rotateX * rotateY * translate;
 
         endPoint = matrix * glm::vec4{0.0, 0.0, 0.0, 1.0};
 
@@ -268,8 +279,7 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         auto const vector = endPoint - startPoint;
         auto const length = glm::length(vector);
         auto const normal = vector / length;
-        auto const biTangent0 = Math::RightVec3;
-        auto const tangent = glm::normalize(glm::cross(biTangent0, normal));
+        auto const tangent = glm::normalize(glm::cross(Math::RightVec3, normal));
         auto const biTangent1 = glm::normalize(glm::cross(normal, tangent));
 
         glm::mat4 model = glm::translate(glm::mat4(1), middlePoint) *
@@ -279,11 +289,13 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         ShapePipeline::Instance const instance
         {
             .model = model,
-            .color = glm::vec4{0.5f, 0.0f, 0.0f, 1.0f},
+            .color = colors[colorIdx],
             .specularStrength = _specularLightIntensity,
             .shininess = _shininess
         };
         _cylinderShapeRenderer->Queue(instance);
+
+        colorIdx = (colorIdx + 1) % colors.size();
     }
 
     _cylinderShapeRenderer->Render(recordState);
@@ -533,7 +545,7 @@ void VisualizationApp::DisplayParametersWindow()
         }
     }
 
-    ImVec2 buttonSize = ImVec2(60, 0);  // width 120, height auto
+    ImVec2 buttonSize = ImVec2(32, 0);  // width 120, height auto
     float windowWidth = ImGui::GetWindowSize().x;
     float buttonX = (windowWidth - buttonSize.x * 2) * 0.5f;
     ImGui::SetCursorPosX(buttonX);

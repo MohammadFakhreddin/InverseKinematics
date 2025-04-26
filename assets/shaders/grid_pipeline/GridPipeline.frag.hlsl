@@ -34,9 +34,11 @@ bool IsInsideGrid(float2 gridPos, float density, float thickness)
 PSOut main(PSIn input) {
     PSOut output;
 
+    float densityModifier = 3.0f;
+    float thicknessModifier = 5.0f;
     {// Primary line
-        float density = 10.0;
-        float thickness = 0.05;
+        float density = 10.0 * densityModifier;
+        float thickness = 0.05 * thicknessModifier;
         float4 color = float4(0.5, 0.0, 0.0, 0.9);
         if (IsInsideGrid(input.gridPosition, density, thickness))
         {
@@ -46,8 +48,8 @@ PSOut main(PSIn input) {
     }
 
     {// Secondary line
-        float density = 2.5;
-        float thickness = 0.025;
+        float density = 2.5 * densityModifier;
+        float thickness = 0.025 * thicknessModifier;
         float4 color = float4(0.0, 0.5, 0.5, 0.75);
         if (IsInsideGrid(input.gridPosition, density, thickness))
         {
@@ -57,8 +59,8 @@ PSOut main(PSIn input) {
     }
 
     {// Trinity line
-        float density = 0.5;
-        float thickness = 0.025 * 0.75;
+        float density = 0.5 * densityModifier;
+        float thickness = 0.025 * 0.75 * thicknessModifier;
         float4 color = float4(0.5, 0.5, 0.5, 0.5);
         if (IsInsideGrid(input.gridPosition, density, thickness))
         {
