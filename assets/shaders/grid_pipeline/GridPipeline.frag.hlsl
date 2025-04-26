@@ -34,8 +34,8 @@ bool IsInsideGrid(float2 gridPos, float density, float thickness)
 PSOut main(PSIn input) {
     PSOut output;
 
-    float densityModifier = 3.0f;
-    float thicknessModifier = 5.0f;
+    float densityModifier = 5.0f;
+    float thicknessModifier = 10.0f;
     {// Primary line
         float density = 10.0 * densityModifier;
         float thickness = 0.05 * thicknessModifier;

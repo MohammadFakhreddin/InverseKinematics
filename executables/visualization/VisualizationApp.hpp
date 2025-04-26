@@ -98,7 +98,7 @@ private:
 
     struct Joint
     {
-        float length = 1.0f;
+        float length = 3.0f;
         glm::vec2 angle;
     };
     std::vector<Joint> _hierarchy{};

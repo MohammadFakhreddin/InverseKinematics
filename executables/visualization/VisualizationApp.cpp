@@ -264,6 +264,16 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     glm::vec3 endPoint {};
     glm::mat4 matrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), Math::RightVec3);
 
+    static constexpr float sphereScale = 1.5f;
+
+    _sphereShapeRenderer->Queue(ShapePipeline::Instance
+    {
+        .model = glm::translate(glm::mat4(1), endPoint) * glm::scale(glm::mat4(1), glm::vec3(sphereScale)),
+        .color = glm::vec4{0.5f, 0.5f, 0.0f, 1.0f},
+        .specularStrength = _specularLightIntensity,
+        .shininess = _shininess
+    });
+
     for (auto const & arm : _hierarchy)
     {
         glm::vec3 startPoint = endPoint;
@@ -271,7 +281,7 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         auto const rotateX = glm::rotate(glm::mat4(1), glm::radians(arm.angle.x), Math::RightVec3);
         auto const rotateY = glm::rotate(glm::mat4(1), glm::radians(arm.angle.y), Math::UpVec3);
         auto const translate = glm::translate(glm::mat4(1), Math::UpVec3 * arm.length);
-        matrix *= rotateX * rotateY * translate;
+        matrix *= rotateY * rotateX * translate;
 
         endPoint = matrix * glm::vec4{0.0, 0.0, 0.0, 1.0};
 
@@ -296,9 +306,19 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         _cylinderShapeRenderer->Queue(instance);
 
         colorIdx = (colorIdx + 1) % colors.size();
+
+        // TODO: Duplicate code
+        _sphereShapeRenderer->Queue(ShapePipeline::Instance
+        {
+            .model = glm::translate(glm::mat4(1), endPoint) * glm::scale(glm::mat4(1), glm::vec3(sphereScale)),
+            .color = glm::vec4{0.5f, 0.5f, 0.0f, 1.0f},
+            .specularStrength = _specularLightIntensity,
+            .shininess = _shininess
+        });
     }
 
     _cylinderShapeRenderer->Render(recordState);
+    _sphereShapeRenderer->Render(recordState);
 
     _sceneRenderPass->End(recordState);
 
@@ -504,9 +524,7 @@ void VisualizationApp::DisplaySceneWindow()
 
 void VisualizationApp::DisplayParametersWindow()
 {
-    _ui->BeginWindow("Parameters");
-
-    ImGui::SeparatorText("Lighting");
+    _ui->BeginWindow("Lighting");
 
     if (ImGui::InputFloat3("Light direction", reinterpret_cast<float *>(&_lightDirection)))
     {
@@ -530,7 +548,9 @@ void VisualizationApp::DisplayParametersWindow()
     ImGui::SliderFloat("Specularity", &_specularLightIntensity, 0.0f, 10.0f);
     ImGui::InputInt("Shininess", &_shininess, 1, 256);
 
-    ImGui::SeparatorText("Hierarchy");
+    _ui->EndWindow();
+
+    _ui->BeginWindow("Hierarchy");
 
     for (int i = 0; i < _hierarchy.size(); i++)
     {
@@ -539,7 +559,7 @@ void VisualizationApp::DisplayParametersWindow()
         if (ImGui::TreeNode(name))
         {
             auto & joint = _hierarchy[i];
-            ImGui::SliderFloat("Length", &joint.length, 0.0, 5.0f);
+            ImGui::SliderFloat("Length", &joint.length, 0.0, 10.0f);
             ImGui::SliderFloat2("Angle", reinterpret_cast<float *>(&joint.angle), -180.0f, 180.0f);
             ImGui::TreePop();
         }
