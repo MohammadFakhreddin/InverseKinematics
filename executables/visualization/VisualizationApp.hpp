@@ -102,4 +102,7 @@ private:
         glm::vec2 angle;
     };
     std::vector<Joint> _hierarchy{};
+
+    glm::vec3 _ikTargetPosition = glm::vec3(7.0f, 1.0f, 7.0f);
+    bool _ikEnabled = false;
 };

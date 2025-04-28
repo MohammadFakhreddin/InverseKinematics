@@ -224,6 +224,11 @@ void VisualizationApp::Update(float deltaTime)
             oldScenes.erase(oldScenes.begin() + i);
         }
     }
+
+    if (_ikEnabled == true)
+    {
+        // Calculate IK here
+    }
 }
 
 //======================================================================================================================
@@ -317,6 +322,15 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         });
     }
 
+    _sphereShapeRenderer->Queue(ShapePipeline::Instance
+    {
+        .model = glm::translate(glm::mat4(1), _ikTargetPosition) *
+            glm::scale(glm::mat4(1), glm::vec3(sphereScale)),
+        .color = glm::vec4{0.5f, 0.0f, 0.5f, 1.0f},
+        .specularStrength = _specularLightIntensity,
+        .shininess = _shininess
+    });
+
     _cylinderShapeRenderer->Render(recordState);
     _sphereShapeRenderer->Render(recordState);
 
@@ -337,8 +351,8 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
 
 void VisualizationApp::Resize()
 {
-    // LogicalDevice::Instance->DeviceWaitIdle();
-    // PrepareSceneRenderPass();
+    _camera->SetProjectionDirty();
+    _sceneWindowResized = true;
 }
 
 //======================================================================================================================
@@ -508,10 +522,9 @@ void VisualizationApp::DisplaySceneWindow()
     sceneWindowSize.x -= 15.0f;
     if (_sceneWindowSize.width != sceneWindowSize.x || _sceneWindowSize.height != sceneWindowSize.y)
     {
-        _sceneWindowSize.width = sceneWindowSize.x;
-        _sceneWindowSize.height = sceneWindowSize.y;
-        _camera->SetProjectionDirty();
-        _sceneWindowResized = true;
+        _sceneWindowSize.width = std::max(sceneWindowSize.x, 1.0f);
+        _sceneWindowSize.height = std::max(sceneWindowSize.y, 1.0f);
+        Resize();
     }
     if (_activeImageIndex < _sceneTextureID_List.size())
     {
@@ -551,6 +564,12 @@ void VisualizationApp::DisplayParametersWindow()
     _ui->EndWindow();
 
     _ui->BeginWindow("Hierarchy");
+
+    ImGui::SeparatorText("IK-Target");
+    ImGui::SliderFloat3("IK Target", reinterpret_cast<float *>(&_ikTargetPosition), -10.0f, 10.0f);
+    ImGui::Checkbox("Enable IK", &_ikEnabled);
+
+    ImGui::SeparatorText("Joints");
 
     for (int i = 0; i < _hierarchy.size(); i++)
     {
