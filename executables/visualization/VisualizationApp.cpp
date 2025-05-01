@@ -543,7 +543,7 @@ void VisualizationApp::DisplayParametersWindow()
 
     if (ImGui::InputFloat3("Light direction", reinterpret_cast<float *>(&_lightDirection)))
     {
-        auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
+        auto *light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
         auto const magnitude2 = glm::length2(_lightDirection);
         if (magnitude2 > 0.0f)
         {
@@ -552,12 +552,12 @@ void VisualizationApp::DisplayParametersWindow()
     }
     if (ImGui::ColorPicker4("Light color", reinterpret_cast<float *>(&_lightColor)))
     {
-        auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
+        auto *light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
         light->color = _lightColor * _lightIntensity;
     }
     if (ImGui::SliderFloat("Ambient intensity", &_ambientStrength, 0.0f, 1.0f))
     {
-        auto * light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
+        auto *light = (ShapePipeline::LightSource *)_lightBufferTracker->Data();
         light->ambientStrength = _ambientStrength;
     }
     ImGui::SliderFloat("Specularity", &_specularLightIntensity, 0.0f, 10.0f);
@@ -579,14 +579,14 @@ void VisualizationApp::DisplayParametersWindow()
         sprintf(name, "Joint %d", i);
         if (ImGui::TreeNode(name))
         {
-            auto & joint = _hierarchy[i];
+            auto &joint = _hierarchy[i];
             ImGui::SliderFloat("Length", &joint.length, 0.0, 10.0f);
             ImGui::SliderFloat2("Angle", reinterpret_cast<float *>(&joint.angle), -180.0f, 180.0f);
             ImGui::TreePop();
         }
     }
 
-    ImVec2 buttonSize = ImVec2(32, 0);  // width 120, height auto
+    ImVec2 buttonSize = ImVec2(32, 0); // width 120, height auto
     float windowWidth = ImGui::GetWindowSize().x;
     float buttonX = (windowWidth - buttonSize.x * 2) * 0.5f;
     ImGui::SetCursorPosX(buttonX);
@@ -601,6 +601,20 @@ void VisualizationApp::DisplayParametersWindow()
     }
 
     _ui->EndWindow();
+}
+
+// TODO: Position of the end effector
+
+//======================================================================================================================
+
+Eigen::MatrixX<float> VisualizationApp::Jacobian()
+{
+    // 2 degrees of freedom per joint
+    Eigen::MatrixX<float> Jacobian(_hierarchy.size() * 2, 3);
+    for (int i = 0; i < _hierarchy.size(); i++)
+    {
+
+    }
 }
 
 //======================================================================================================================

@@ -12,6 +12,7 @@
 #include "camera/ArcballCamera.hpp"
 
 #include <SDL_events.h>
+#include <Eigen>
 // TODO: I could have just exported some mesh from GLTF and use the mesh renderer class instead. Why do I do this to myself everytime?
 class VisualizationApp
 {
@@ -44,6 +45,9 @@ private:
     void DisplaySceneWindow();
 
     void DisplayParametersWindow();
+
+    [[nodiscard]]
+    Eigen::MatrixX<float> Jacobian();
 
     // Render parameters
     std::shared_ptr<MFA::Path> _path{};
