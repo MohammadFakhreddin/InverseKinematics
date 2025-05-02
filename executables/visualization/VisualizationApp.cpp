@@ -239,7 +239,7 @@ void VisualizationApp::Update(float deltaTime)
         // TODO: Add damping
         Eigen::MatrixX<float> const JTxJ = (JT * J);
         Eigen::MatrixX<float> const identity = Eigen::MatrixXf::Identity(JTxJ.rows(), JTxJ.cols());
-        Eigen::MatrixX<float> const damping = 0.01f * identity;
+        Eigen::MatrixX<float> const damping = _damping * identity;
         Eigen::MatrixX<float> const dTheta = Eigen::Inverse(JTxJ + damping) * JT * dE;
         for (int i = 0; i < (int)_hierarchy.size(); i++)
         {
@@ -596,6 +596,7 @@ void VisualizationApp::DisplayParametersWindow()
     ImGui::SeparatorText("IK-Target");
     ImGui::SliderFloat3("IK Target", reinterpret_cast<float *>(&_ikTargetPosition), -10.0f, 10.0f);
     ImGui::Checkbox("Enable IK", &_ikEnabled);
+    ImGui::SliderFloat("Damping", &_damping, 0.0f, 1.0f);
 
     ImGui::SeparatorText("Joints");
 
