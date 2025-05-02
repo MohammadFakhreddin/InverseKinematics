@@ -2,7 +2,7 @@
 
 **A lightweight framework implemented to experiment with different aspects of inverse kinematics (IK).**
 
-<img src="assets/IK_Giff.gif"  height=400>
+<img src="assets/IK_Gif.gif"  height=400>
 
 ---
 
