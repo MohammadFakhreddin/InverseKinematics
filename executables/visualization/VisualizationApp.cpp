@@ -227,9 +227,41 @@ void VisualizationApp::Update(float deltaTime)
         }
     }
 
-    if (_ikEnabled == true)
+    if (_ikEnabled == true && _hierarchy.empty() == false)
     {
         // Calculate IK here
+        glm::vec3 const currentEndPoint = CalculateJointsLocation();
+        Eigen::MatrixX<float> const J = Jacobian(currentEndPoint);
+        Eigen::MatrixX<float> const JT = Eigen::Transpose(J);
+        auto const dEGlm = _ikTargetPosition - currentEndPoint;
+        Eigen::MatrixX<float> dE (3, 1);
+        dE(0, 0) = dEGlm[0]; dE(1, 0) = dEGlm[1]; dE(2, 0) = dEGlm[2];
+        // TODO: Add damping
+        Eigen::MatrixX<float> const JTxJ = (JT * J);
+        Eigen::MatrixX<float> const identity = Eigen::MatrixXf::Identity(JTxJ.rows(), JTxJ.cols());
+        Eigen::MatrixX<float> const damping = 0.01f * identity;
+        Eigen::MatrixX<float> const dTheta = Eigen::Inverse(JTxJ + damping) * JT * dE;
+        for (int i = 0; i < (int)_hierarchy.size(); i++)
+        {
+            auto & joint = _hierarchy[i];
+            if (joint.isLengthFixed == false)
+            {
+                joint.length = joint.length + dTheta(i * 3 + 0, 0);
+            }
+            if (joint.isX_AngleFixed == false)
+            {
+                joint.angle.x = joint.angle.x + dTheta(i * 3 + 1, 0);
+            }
+            if (joint.isY_AngleFixed == false)
+            {
+                joint.angle.y = joint.angle.y + dTheta(i * 3 + 2, 0);
+            }
+        }
+        // MFA_LOG_INFO("dTheta.rows(): %d, dTheta.cols(): %d", dTheta.rows(), dTheta.cols());
+        // for (int i = 0; i < dTheta.rows(); i++)
+        // {
+        //     printf("%f\n", dTheta(i, 0));
+        // }
     }
 }
 
@@ -269,8 +301,6 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
     };
 
     glm::vec3 endPoint {};
-    glm::mat4 matrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), Math::RightVec3);
-
     static constexpr float sphereScale = 1.5f;
 
     _sphereShapeRenderer->Queue(ShapePipeline::Instance
@@ -281,16 +311,12 @@ void VisualizationApp::Render(MFA::RT::CommandRecordState &recordState)
         .shininess = _shininess
     });
 
+    CalculateJointsLocation();
+
     for (auto const & arm : _hierarchy)
     {
         glm::vec3 startPoint = endPoint;
-
-        auto const rotateX = glm::rotate(glm::mat4(1), glm::radians(arm.angle.x), Math::RightVec3);
-        auto const rotateY = glm::rotate(glm::mat4(1), glm::radians(arm.angle.y), Math::UpVec3);
-        auto const translate = glm::translate(glm::mat4(1), Math::UpVec3 * arm.length);
-        matrix *= rotateY * rotateX * translate;
-
-        endPoint = matrix * glm::vec4{0.0, 0.0, 0.0, 1.0};
+        endPoint = arm.matrix * glm::vec4 {0.0f, 0.0f, 0.0f, 1.0f};
 
         auto const middlePoint = (startPoint + endPoint) * 0.5f;
         auto const vector = endPoint - startPoint;
@@ -582,6 +608,9 @@ void VisualizationApp::DisplayParametersWindow()
             auto &joint = _hierarchy[i];
             ImGui::SliderFloat("Length", &joint.length, 0.0, 10.0f);
             ImGui::SliderFloat2("Angle", reinterpret_cast<float *>(&joint.angle), -180.0f, 180.0f);
+            ImGui::Checkbox("Is length fixed", &joint.isLengthFixed);
+            ImGui::Checkbox("Is angle X fixed", &joint.isX_AngleFixed);
+            ImGui::Checkbox("Is angle y fixed", &joint.isY_AngleFixed);
             ImGui::TreePop();
         }
     }
@@ -603,18 +632,94 @@ void VisualizationApp::DisplayParametersWindow()
     _ui->EndWindow();
 }
 
-// TODO: Position of the end effector
+//======================================================================================================================
+
+glm::vec3 VisualizationApp::CalculateJointsLocation()
+{
+    glm::mat4 matrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), Math::RightVec3);
+
+    for (auto & arm : _hierarchy)
+    {
+        auto const rotateX = glm::rotate(glm::mat4(1), glm::radians(arm.angle.x), Math::RightVec3);
+        auto const rotateY = glm::rotate(glm::mat4(1), glm::radians(arm.angle.y), Math::UpVec3);
+        auto const translate = glm::translate(glm::mat4(1), Math::UpVec3 * arm.length);
+        matrix *= rotateY * rotateX * translate;
+
+        arm.matrix = matrix;
+    }
+
+    return matrix * glm::vec4{0.0, 0.0, 0.0, 1.0};
+}
 
 //======================================================================================================================
 
-Eigen::MatrixX<float> VisualizationApp::Jacobian()
+Eigen::MatrixX<float> VisualizationApp::Jacobian(glm::vec3 const & currentEndPoint)
 {
-    // 2 degrees of freedom per joint
-    Eigen::MatrixX<float> Jacobian(_hierarchy.size() * 2, 3);
-    for (int i = 0; i < _hierarchy.size(); i++)
-    {
+    // The epsilon here determines the convergence rate and thus the speed
+    static constexpr float lengthEpsilon = 0.025f;
+    static constexpr float angleEpsilon = 0.5f;
 
+    // 3 degrees of freedom per joint (Length + x, y angles)
+    Eigen::MatrixX<float> Jacobian(3, _hierarchy.size() * 3);
+    for (int armIdx = 0; armIdx < _hierarchy.size(); armIdx++)
+    {
+        auto & joint = _hierarchy[armIdx];
+
+        {// Length
+            glm::vec3 prevEndPoint = currentEndPoint;
+            glm::vec3 nextEndPoint = currentEndPoint;
+            if (joint.isLengthFixed == false)
+            {
+                float const jointLength = joint.length;
+                joint.length = jointLength - lengthEpsilon;
+                prevEndPoint = CalculateJointsLocation();
+                joint.length = jointLength + lengthEpsilon;
+                nextEndPoint = CalculateJointsLocation();
+                joint.length = jointLength;
+            }
+            auto const difference = (nextEndPoint - prevEndPoint) / 2.0f * lengthEpsilon;
+            Jacobian(0, 3 * armIdx + 0) = difference.x;
+            Jacobian(1, 3 * armIdx + 0) = difference.y;
+            Jacobian(2, 3 * armIdx + 0) = difference.z;
+        }
+
+        {// X angle
+            glm::vec3 prevEndPoint = currentEndPoint;
+            glm::vec3 nextEndPoint = currentEndPoint;
+            if (joint.isX_AngleFixed == false)
+            {
+                float const angleX = joint.angle.x;
+                joint.angle.x = angleX - angleEpsilon;
+                prevEndPoint = CalculateJointsLocation();
+                joint.angle.x = angleX + angleEpsilon;
+                nextEndPoint = CalculateJointsLocation();
+                joint.angle.x = angleX;
+            }
+            auto const difference = (nextEndPoint - prevEndPoint) / 2.0f * angleEpsilon;
+            Jacobian(0, 3 * armIdx + 1) = difference.x;
+            Jacobian(1, 3 * armIdx + 1) = difference.y;
+            Jacobian(2, 3 * armIdx + 1) = difference.z;
+        }
+
+        {// Y angle
+            glm::vec3 prevEndPoint = currentEndPoint;
+            glm::vec3 nextEndPoint = currentEndPoint;
+            if (joint.isY_AngleFixed == false)
+            {
+                float const angleY = joint.angle.y;
+                joint.angle.y = angleY - angleEpsilon;
+                prevEndPoint = CalculateJointsLocation();
+                joint.angle.y = angleY + angleEpsilon;
+                nextEndPoint = CalculateJointsLocation();
+                joint.angle.y = angleY;
+            }
+            auto const difference = (nextEndPoint - prevEndPoint) / 2.0f * angleEpsilon;
+            Jacobian(0, 3 * armIdx + 2) = difference.x;
+            Jacobian(1, 3 * armIdx + 2) = difference.y;
+            Jacobian(2, 3 * armIdx + 2) = difference.z;
+        }
     }
+    return Jacobian;
 }
 
 //======================================================================================================================

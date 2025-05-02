@@ -46,8 +46,10 @@ private:
 
     void DisplayParametersWindow();
 
+    glm::vec3 CalculateJointsLocation();
+
     [[nodiscard]]
-    Eigen::MatrixX<float> Jacobian();
+    Eigen::MatrixX<float> Jacobian(glm::vec3 const & endPoint);
 
     // Render parameters
     std::shared_ptr<MFA::Path> _path{};
@@ -103,7 +105,13 @@ private:
     struct Joint
     {
         float length = 3.0f;
-        glm::vec2 angle;
+        glm::vec2 angle {};
+
+        bool isLengthFixed = true;
+        bool isX_AngleFixed = false;
+        bool isY_AngleFixed = false;
+
+        glm::mat4 matrix {};
     };
     std::vector<Joint> _hierarchy{};
 
