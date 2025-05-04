@@ -1,4 +1,4 @@
-# WebView
+# Inverse kinematics :)
 
 **A lightweight framework implemented to experiment with different aspects of inverse kinematics (IK).**
 
