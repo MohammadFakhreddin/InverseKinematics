@@ -3,6 +3,7 @@
 #include "BedrockAssert.hpp"
 #include "BedrockCommon.hpp"
 
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -76,7 +77,7 @@ std::string MFA::Path::Get(char const *address) const
     {
         return address;
     }
-    if (strncmp(address, "./", 2) == 0 || strncmp(address, "/", 1) == 0)
+    if (std::strncmp(address, "./", 2) == 0 || std::strncmp(address, "/", 1) == 0)
     {
         return address;
     }
@@ -87,7 +88,7 @@ std::string MFA::Path::Get(char const *address) const
 
 std::string MFA::Path::Relative(char const *address) const
 {
-    if (strncmp(address, mAssetPath.c_str(), mAssetPath.size()) == 0)
+    if (std::strncmp(address, mAssetPath.c_str(), mAssetPath.size()) == 0)
     {
         return std::string(address).substr(mAssetPath.size());
     }
