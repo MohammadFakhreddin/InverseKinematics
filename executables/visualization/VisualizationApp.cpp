@@ -596,7 +596,7 @@ void VisualizationApp::DisplayParametersWindow()
     ImGui::SeparatorText("IK-Target");
     ImGui::SliderFloat3("IK Target", reinterpret_cast<float *>(&_ikTargetPosition), -10.0f, 10.0f);
     ImGui::Checkbox("Enable IK", &_ikEnabled);
-    ImGui::SliderFloat("Damping", &_damping, 0.0f, 1.0f);
+    ImGui::SliderFloat("Damping", &_damping, 0.001f, 1.0f);
 
     ImGui::SeparatorText("Joints");
 
